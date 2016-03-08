@@ -5,9 +5,9 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: SQLCipher
+Name: SQLite
 Description: SQL database engine
 Version: @PACKAGE_VERSION@
-Libs: -L${libdir} -lsqlcipher
+Libs: -L${libdir} -lsqlite3
 Libs.private: @LIBS@
 Cflags: -I${includedir}
