@@ -1,0 +1,12 @@
+language: c
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y libssl-dev tcl-dev
+script:
+  - ./configure --enable-tempstore=yes 
+        CFLAGS="-O2 -fno-strict-aliasing
+                -DSQLITE_HAS_CODEC -DSQLITE_ENABLE_RTREE=1 -DSQLITE_ENABLE_COLUMN_METADATA
+                -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1 -DSQLITE_MAX_VARIABLE_NUMBER=250000"
+        LDFLAGS="-lcrypto"
+  - make
+  - make test
