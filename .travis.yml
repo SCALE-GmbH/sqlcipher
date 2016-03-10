@@ -1,7 +1,10 @@
 language: c
-before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y libssl-dev tcl-dev
+sudo: false
+addons:
+  apt:
+    packages:
+      - libssl-dev
+      - tcl-dev
 script:
   - ./configure --enable-tempstore=yes 
         CFLAGS="-O2 -fno-strict-aliasing
