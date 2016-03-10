@@ -164,7 +164,7 @@ static void cipher_bin2hex(const unsigned char* in, int sz, char *out) {
 typedef struct codec_ctx codec_ctx;
 
 /* activation and initialization */
-void sqlcipher_activate();
+int sqlcipher_activate();
 void sqlcipher_deactivate();
 int sqlcipher_codec_ctx_init(codec_ctx **, Db *, Pager *, sqlite3_file *, const void *, int);
 void sqlcipher_codec_ctx_free(codec_ctx **);

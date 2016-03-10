@@ -108,12 +108,17 @@ sqlcipher_provider* sqlcipher_get_provider() {
   return default_provider;
 }
 
-void sqlcipher_activate() {
-  sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER));
+int sqlcipher_activate() {
+  int rc = SQLITE_NOMEM;
+  sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+
+  sqlite3_mutex_enter(mutex);
 
   if(sqlcipher_provider_mutex == NULL) {
     /* allocate a new mutex to guard access to the provider */
     sqlcipher_provider_mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+    if(sqlcipher_provider_mutex == NULL)
+      goto error_out;
   }
 
   /* check to see if there is a provider registered at this point
@@ -121,6 +126,8 @@ void sqlcipher_activate() {
      default provider */
   if(sqlcipher_get_provider() == NULL) {
     sqlcipher_provider *p = sqlcipher_malloc(sizeof(sqlcipher_provider)); 
+    if(!p)
+      goto error_out;
 #if defined (SQLCIPHER_CRYPTO_CC)
     extern int sqlcipher_cc_setup(sqlcipher_provider *p);
     sqlcipher_cc_setup(p);
@@ -137,8 +144,11 @@ void sqlcipher_activate() {
   }
 
   sqlcipher_activate_count++; /* increment activation count */
+  rc = SQLITE_OK;
 
+error_out:
   sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER));
+  return rc;
 }
 
 void sqlcipher_deactivate() {
