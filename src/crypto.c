@@ -349,7 +349,8 @@ int sqlite3CodecAttach(sqlite3* db, int nDb, const void *zKey, int nKey) {
     sqlite3_file *fd = sqlite3Pager_get_fd(pPager);
     codec_ctx *ctx;
 
-    sqlcipher_activate(); /* perform internal initialization for sqlcipher */
+    rc = sqlcipher_activate(); /* perform internal initialization for sqlcipher */
+    if (rc != SQLITE_OK) return rc;
 
     sqlite3_mutex_enter(db->mutex);
 
