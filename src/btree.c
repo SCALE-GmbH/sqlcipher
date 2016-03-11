@@ -1875,28 +1875,6 @@ static int btreeInvokeBusyHandler(void *pArg){
 }
 
 /*
-** Extract the page size from the database header. Returns valid page size
-** or zero if the data is invalid.
-*/
-static u32 btreePageSizeFromHeader(u8 *pageData){
-  /* EVIDENCE-OF: R-51873-39618 The page size for a database file is
-  ** determined by the 2-byte integer located at an offset of 16 bytes from
-  ** the beginning of the database file. */
-  u32 pageSize = (pageData[16]<<8) | (pageData[17]<<16);
-
-  /* EVIDENCE-OF: R-25008-21688 The size of a page is a power of two
-  ** between 512 and 65536 inclusive. */
-  if( ((pageSize-1)&pageSize)!=0
-   || pageSize>SQLITE_MAX_PAGE_SIZE
-   || pageSize<=256
-  ){
-      pageSize = 0;
-  }
-
-  return pageSize;
-}
-
-/*
 ** Open a database file.
 ** 
 ** zFilename is the name of the database file.  If zFilename is NULL
@@ -2083,7 +2061,7 @@ int sqlite3BtreeOpen(
     /* EVIDENCE-OF: R-51873-39618 The page size for a database file is
     ** determined by the 2-byte integer located at an offset of 16 bytes from
     ** the beginning of the database file. */
-    pBt->pageSize = btreePageSizeFromHeader(zDbHeader);
+    pBt->pageSize = sqlite3PageSizeFromHeader(zDbHeader);
     if(pBt->pageSize == 0){
 #ifndef SQLITE_OMIT_AUTOVACUUM
       /* If the magic name ":memory:" will create an in-memory database, then
@@ -2674,7 +2652,7 @@ static int lockBtree(BtShared *pBt){
     /* EVIDENCE-OF: R-51873-39618 The page size for a database file is
     ** determined by the 2-byte integer located at an offset of 16 bytes from
     ** the beginning of the database file. */
-    pageSize = btreePageSizeFromHeader(page1);
+    pageSize = sqlite3PageSizeFromHeader(page1);
     /* EVIDENCE-OF: R-25008-21688 The size of a page is a power of two
     ** between 512 and 65536 inclusive. */
     if( !pageSize ){
