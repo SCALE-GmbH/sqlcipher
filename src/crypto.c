@@ -56,11 +56,6 @@ static int codec_set_btree_to_codec_pagesize(sqlite3 *db, Db *pDb, codec_ctx *ct
   reserve_sz = sqlcipher_codec_ctx_get_reservesize(ctx);
 
   sqlite3_mutex_enter(db->mutex);
-  db->nextPagesize = page_sz; 
-
-  /* before forcing the page size we need to unset the BTS_PAGESIZE_FIXED flag, else  
-     sqliteBtreeSetPageSize will block the change  */
-  pDb->pBt->pBt->btsFlags &= ~BTS_PAGESIZE_FIXED;
   CODEC_TRACE(("codec_set_btree_to_codec_pagesize: sqlite3BtreeSetPageSize() size=%d reserve=%d\n", page_sz, reserve_sz));
   rc = sqlite3BtreeSetPageSize(pDb->pBt, page_sz, reserve_sz, 0);
   sqlite3_mutex_leave(db->mutex);
@@ -330,6 +325,18 @@ void* sqlite3Codec(void *iCtx, void *data, Pgno pgno, int mode) {
   }
 }
 
+/*
+** Called by the pager to notify codec when a page size change is detected.
+** Prime example is the case that a database file is opened with a different
+** page size.
+*/
+static void sqlite3CodecSizeChange(void *pCodec, int pageSize, int reserve)
+{
+    codec_ctx *ctx = pCodec;
+    /* Allocation may fail but we can not report it here. */
+    (void) sqlcipher_codec_ctx_set_pagesize(ctx, pageSize);
+}
+
 void sqlite3FreeCodecArg(void *pCodecArg) {
   codec_ctx *ctx = (codec_ctx *) pCodecArg;
   if(pCodecArg == NULL) return;
@@ -359,7 +366,7 @@ int sqlite3CodecAttach(sqlite3* db, int nDb, const void *zKey, int nKey) {
 
     if(rc != SQLITE_OK) return rc; /* initialization failed, do not attach potentially corrupted context */
 
-    sqlite3pager_sqlite3PagerSetCodec(sqlite3BtreePager(pDb->pBt), sqlite3Codec, NULL, sqlite3FreeCodecArg, (void *) ctx);
+    sqlite3pager_sqlite3PagerSetCodec(sqlite3BtreePager(pDb->pBt), sqlite3Codec, sqlite3CodecSizeChange, sqlite3FreeCodecArg, (void *) ctx);
 
     codec_set_btree_to_codec_pagesize(db, pDb, ctx);
 

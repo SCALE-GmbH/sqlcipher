@@ -2864,6 +2864,105 @@ end_playback:
   return rc;
 }
 
+#ifdef SQLITE_HAS_CODEC
+/*
+** Special handling for reading the root page of an encrypted database. As
+** the initialization vector is stored at the end of each page and it is
+** required for decryption, we actually need to know the page size for
+** decrypting the page.
+** Unfortunately, the page size is part of the database file header on the
+** first page.
+** This is an attempt to solve that by trying all possible page sizes, so
+** we currently need to read at most 64 KB and decrypt 9 different pages.
+** To reduce the performance impact, the current page size value is attempted
+** first so if pragma page_size = N was called with correct value N there is
+** no overhead.
+**
+** page_data points to the page buffer of pPager, which is allocated to the
+** current value of pPager->pageSize. Therefore an extra buffer must be
+** used here for reading the additional data. The caller has already filled
+** page_data with the initial data.
+**
+** Returns an SQLite error code.
+*/
+static int decryptRecoverRootPage(Pager *pPager, u8 *page_data){
+  int rc = SQLITE_OK;
+  const int root_page = 1;
+  int initial_page_size = pPager->pageSize;
+
+  /* Save the original data as decryption is destructive. */
+
+  u8 *buffer = sqlite3_malloc(initial_page_size);
+  u32 buffer_size = initial_page_size;
+  if( buffer==0 ){
+    return SQLITE_NOMEM;
+  }
+  memcpy(buffer, page_data, buffer_size);
+  CODEC1(pPager, page_data, root_page, 3, rc=SQLITE_NOMEM);
+
+  if( rc!=SQLITE_OK || sqlite3PageSizeFromHeader(page_data)!=initial_page_size ){
+    /* Initial page size was incorrect, attempt all other sizes. */
+    u32 page_size;
+    CODEC_TRACE(("initial page size %d incorrect, guessing\n", initial_page_size));
+
+    for(page_size = 512; page_size <= SQLITE_MAX_PAGE_SIZE; page_size *= 2){
+      /* Don't attempt the initial page size a second time. */
+      if(page_size==initial_page_size){
+        continue;
+      }
+
+      /* Reset error code for new attempt. */
+      rc = SQLITE_OK;
+
+      /* Make sure the buffer is sufficiently big and completely filled. */
+      if( page_size>buffer_size ){
+        u8 *new_buffer = sqlite3_realloc(buffer, page_size);
+        CODEC_TRACE(("root page: growing page to %d\n", page_size));
+        if( new_buffer==0 ){
+          rc = SQLITE_NOMEM;
+          break;
+        }
+        rc = sqlite3OsRead(pPager->fd, new_buffer+buffer_size,
+                           page_size-buffer_size, buffer_size);
+        if( rc!=SQLITE_OK ){
+          break;
+        }
+
+        buffer = new_buffer;
+        buffer_size = page_size;
+      }
+
+      /* Try to decrypt and check page size. */
+      if( pPager->xCodecSizeChng ){
+        pPager->xCodecSizeChng(pPager->pCodec, page_size, 0);
+      }
+      {
+        u8 *scratch = sqlite3_malloc(buffer_size);
+        if( scratch==0 ){
+          rc = SQLITE_NOMEM;
+          break;
+        }
+        memcpy(scratch, buffer, buffer_size);
+        CODEC1(pPager, scratch, root_page, 3, rc=SQLITE_NOMEM);
+        if( rc!=SQLITE_NOMEM && sqlite3PageSizeFromHeader(scratch)==page_size ){
+          memcpy(page_data, scratch, initial_page_size);
+          sqlite3_free(scratch);
+          break;
+        }
+        sqlite3_free(scratch);
+      }
+    }
+
+    if( rc==SQLITE_OK ){
+      CODEC_TRACE(("found correct page size %d, returning buffer\n", page_size));
+    }else if( rc==SQLITE_IOERR_SHORT_READ ){
+      rc = SQLITE_OK;
+    }
+  }
+  sqlite3_free(buffer);
+  return rc;
+}
+#endif
 
 /*
 ** Read the content for page pPg out of the database file and into 
@@ -2919,7 +3018,14 @@ static int readDbPage(PgHdr *pPg, u32 iFrame){
       memcpy(&pPager->dbFileVers, dbFileVers, sizeof(pPager->dbFileVers));
     }
   }
-  CODEC1(pPager, pPg->pData, pgno, 3, rc = SQLITE_NOMEM);
+
+#ifdef SQLITE_HAS_CODEC
+  if( pgno!=1 || iFrame ){
+    CODEC1(pPager, pPg->pData, pgno, 3, rc = SQLITE_NOMEM);
+  }else if( pPager->xCodec && rc==SQLITE_OK ){
+    rc = decryptRecoverRootPage(pPager, pPg->pData);
+  }
+#endif
 
   PAGER_INCR(sqlite3_pager_readdb_count);
   PAGER_INCR(pPager->nRead);
