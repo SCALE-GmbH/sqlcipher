@@ -2893,7 +2893,7 @@ static int decryptRecoverRootPage(Pager *pPager, u8 *page_data){
   /* Save the original data as decryption is destructive. */
 
   u8 *buffer = sqlite3_malloc(initial_page_size);
-  u32 buffer_size = initial_page_size;
+  u32 buffer_size = initial_page_size;  /* Size and fill of buffer */
   if( buffer==0 ){
     return SQLITE_NOMEM;
   }
@@ -2914,7 +2914,9 @@ static int decryptRecoverRootPage(Pager *pPager, u8 *page_data){
       /* Reset error code for new attempt. */
       rc = SQLITE_OK;
 
-      /* Make sure the buffer is sufficiently big and completely filled. */
+      /* Make sure the buffer is sufficiently big and completely filled. This
+      ** block ensures that both buffer and buffer_size are updated in the
+      ** success case. */
       if( page_size>buffer_size ){
         u8 *new_buffer = sqlite3_realloc(buffer, page_size);
         CODEC_TRACE(("root page: growing page to %d\n", page_size));
@@ -2922,13 +2924,13 @@ static int decryptRecoverRootPage(Pager *pPager, u8 *page_data){
           rc = SQLITE_NOMEM;
           break;
         }
+        buffer = new_buffer;  /* overwrite possibly dangling pointer */
+
         rc = sqlite3OsRead(pPager->fd, new_buffer+buffer_size,
                            page_size-buffer_size, buffer_size);
         if( rc!=SQLITE_OK ){
           break;
         }
-
-        buffer = new_buffer;
         buffer_size = page_size;
       }
 
