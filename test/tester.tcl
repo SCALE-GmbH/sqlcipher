@@ -122,6 +122,12 @@ if {[info command sqlite_orig]==""} {
         set ::dbhandle [lindex $args 0]
         uplevel #0 $::G(perm:dbconfig)
       }
+      # Currently SQLCipher fails to use the same password/key for attached
+      # databases if the original password was not stored. Work around this
+      # by forcing SQLCipher to keep the password.
+      if {[sqlite_orig -has-codec] && ![info exists ::do_not_use_codec]} {
+        uplevel 1 "[lindex $args 0] eval {pragma cipher_store_pass=1}"
+      }
       set res
     } else {
       # This command is not opening a new database connection. Pass the
