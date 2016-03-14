@@ -275,8 +275,8 @@ void* sqlcipher_malloc(int sz) {
 static int sqlcipher_cipher_ctx_init(cipher_ctx **iCtx) {
   int rc;
   cipher_ctx *ctx;
-  *iCtx = (cipher_ctx *) sqlcipher_malloc(sizeof(cipher_ctx));
-  ctx = *iCtx;
+  *iCtx = 0;
+  ctx = (cipher_ctx *) sqlcipher_malloc(sizeof(cipher_ctx));
   if(ctx == NULL) return SQLITE_NOMEM;
 
   ctx->provider = (sqlcipher_provider *) sqlcipher_malloc(sizeof(sqlcipher_provider));
@@ -296,6 +296,7 @@ static int sqlcipher_cipher_ctx_init(cipher_ctx **iCtx) {
   /* setup default flags */
   ctx->flags = default_flags;
 
+  *iCtx = ctx;
   return SQLITE_OK;
 }
 
@@ -388,10 +389,16 @@ static int sqlcipher_cipher_ctx_copy(cipher_ctx *target, cipher_ctx *source) {
   void *provider = target->provider;
   void *provider_ctx = target->provider_ctx;
 
+  assert(provider->ctx_free == source->provider->ctx_free);
+
   CODEC_TRACE(("sqlcipher_cipher_ctx_copy: entered target=%p, source=%p\n", target, source));
   sqlcipher_free(target->pass, target->pass_sz); 
   sqlcipher_free(target->keyspec, target->keyspec_sz); 
   memcpy(target, source, sizeof(cipher_ctx));
+
+  /* drop pointers to memory that is owned by another context */
+  target->pass = NULL;
+  target->keyspec = NULL;
 
   target->key = key; //restore pointer to previously allocated key data
   memcpy(target->key, source->key, CIPHER_MAX_KEY_SZ);
@@ -683,8 +690,7 @@ int sqlcipher_get_default_pagesize() {
 int sqlcipher_codec_ctx_init(codec_ctx **iCtx, Db *pDb, Pager *pPager, sqlite3_file *fd, const void *zKey, int nKey) {
   int rc;
   codec_ctx *ctx;
-  *iCtx = sqlcipher_malloc(sizeof(codec_ctx));
-  ctx = *iCtx;
+  ctx = sqlcipher_malloc(sizeof(codec_ctx));
 
   if(ctx == NULL) return SQLITE_NOMEM;
 
@@ -730,6 +736,7 @@ int sqlcipher_codec_ctx_init(codec_ctx **iCtx, Db *pDb, Pager *pPager, sqlite3_f
 
   if((rc = sqlcipher_cipher_ctx_copy(ctx->write_ctx, ctx->read_ctx)) != SQLITE_OK) return rc;
 
+  *iCtx = ctx;
   return SQLITE_OK;
 }
 
