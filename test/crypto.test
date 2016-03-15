@@ -899,15 +899,15 @@ do_test custom-pagesize {
 } {1000}
 db close
 
-# open the database with the default page size
-## and verfiy that it is not readable 
+# open the database with the default page size, the different page size
+# should be automatically detected
 do_test custom-pagesize-must-match {
   sqlite_orig db test.db
   catchsql {
     PRAGMA key = 'testkey';
     SELECT name FROM sqlite_master WHERE type='table';
   }
-} {1 {file is encrypted or is not a database}}
+} {0 t1}
 db close
 file delete -force test.db
 
