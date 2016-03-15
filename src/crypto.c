@@ -389,6 +389,18 @@ int sqlite3CodecAttach(sqlite3* db, int nDb, const void *zKey, int nKey) {
     if(fd != NULL) { 
       sqlite3BtreeSetAutoVacuum(pDb->pBt, SQLITE_DEFAULT_AUTOVACUUM);
     }
+
+    /*
+    ** Attempt to begin a transaction to load the schema etc. from the DB.
+    ** This also detects the page size which does not work during the initial
+    ** open as hat code does not use the codec to decrypt the root page. */
+    {
+      int rc = sqlite3BtreeBeginTrans(pDb->pBt, 0);
+      if( rc==SQLITE_OK ){
+        sqlite3BtreeCommit(pDb->pBt);
+      }
+    }
+
     sqlite3_mutex_leave(db->mutex);
   }
   return SQLITE_OK;
