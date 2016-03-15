@@ -431,6 +431,7 @@ do_test attach-database-with-default-key {
   execsql {
     PRAGMA key = 'testkey';
     PRAGMA cipher_add_random = "x'deadbaad'";
+    PRAGMA cipher_store_pass = 0;
     CREATE TABLE t2(a,b);
     INSERT INTO t2 VALUES ('test1', 'test2'); 
   } db2

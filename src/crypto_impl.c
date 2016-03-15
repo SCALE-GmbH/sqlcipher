@@ -279,6 +279,13 @@ static int sqlcipher_cipher_ctx_init(cipher_ctx **iCtx) {
   ctx = (cipher_ctx *) sqlcipher_malloc(sizeof(cipher_ctx));
   if(ctx == NULL) return SQLITE_NOMEM;
 
+  /* Store the password by default because the original SQLite tests
+  ** assume that attached databases inherit the password. As the code
+  ** to inherit the derived key is flawed this is required to make the
+  ** tests run. Hopefully this can be reverted after that is fixed. */
+
+  ctx->store_pass = 1;
+
   ctx->provider = (sqlcipher_provider *) sqlcipher_malloc(sizeof(sqlcipher_provider));
   if(ctx->provider == NULL) return SQLITE_NOMEM;
 
