@@ -193,6 +193,7 @@ int sqlcipher_get_default_kdf_iter();
 int sqlcipher_codec_ctx_set_kdf_iter(codec_ctx *, int, int);
 int sqlcipher_codec_ctx_get_kdf_iter(codec_ctx *ctx, int);
 
+void sqlcipher_codec_ctx_load_kdf_salt(codec_ctx *ctx, u8 *page1_data);
 void* sqlcipher_codec_ctx_get_kdf_salt(codec_ctx *ctx);
 
 int sqlcipher_codec_ctx_set_fast_kdf_iter(codec_ctx *, int, int);

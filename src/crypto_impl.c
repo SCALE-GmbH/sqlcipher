@@ -652,6 +652,16 @@ void* sqlcipher_codec_ctx_get_data(codec_ctx *ctx) {
   return ctx->buffer;
 }
 
+/*
+** Update the salt value from the first page of the database. This should
+** be done every time the first page is loaded since the database file
+** could have been replaced, e.g. from a backup.
+*/
+void sqlcipher_codec_ctx_load_kdf_salt(codec_ctx *ctx, u8 *page1_data) {
+  memcpy(ctx->kdf_salt, page1_data, ctx->kdf_salt_sz);
+  ctx->need_kdf_salt = 0;
+}
+
 void* sqlcipher_codec_ctx_get_kdf_salt(codec_ctx *ctx) {
   return ctx->kdf_salt;
 }

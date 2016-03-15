@@ -288,6 +288,14 @@ void* sqlite3Codec(void *iCtx, void *data, Pgno pgno, int mode) {
   void *kdf_salt = sqlcipher_codec_ctx_get_kdf_salt(ctx);
   CODEC_TRACE(("sqlite3Codec: entered pgno=%d, mode=%d, page_sz=%d\n", pgno, mode, page_sz));
 
+  /* Always take the current salt value from the first page when loading it.
+  ** The database file may have been initially written or restored from backup
+  ** and the salt value from the root page may have changed. */
+
+  if (pgno == 1 && mode < 6) {
+    sqlcipher_codec_ctx_load_kdf_salt(ctx, pData);
+  }
+
   /* call to derive keys if not present yet */
   if((rc = sqlcipher_codec_key_derive(ctx)) != SQLITE_OK) {
    sqlcipher_codec_ctx_set_error(ctx, rc); 
