@@ -2955,6 +2955,15 @@ static int decryptRecoverRootPage(Pager *pPager, u8 *page_data){
       }
     }
 
+    /* Reset the page size of the codec after trying to detect the correct
+    ** page size. Especially if the detection fails the codec page size
+    ** will be different (biffer) than the pager page size, therefore
+    ** overwriting memory during decryption. */
+
+    if( pPager->xCodecSizeChng ){
+      pPager->xCodecSizeChng(pPager->pCodec, initial_page_size, 0);
+    }
+
     if( rc==SQLITE_OK ){
       CODEC_TRACE(("found correct page size %d, returning buffer\n", page_size));
     }else if( rc==SQLITE_IOERR_SHORT_READ ){
