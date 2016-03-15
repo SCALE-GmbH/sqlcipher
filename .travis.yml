@@ -15,7 +15,9 @@ env:
   matrix:
     - CRYPTO_LIB=libtomcrypt
     - CRYPTO_LIB=openssl LDFLAGS="-lcrypto"
+    - CRYPTO_LIB=libtomcrypt DEBUG_FLAGS="--enable-debug"
+    - CRYPTO_LIB=openssl LDFLAGS="-lcrypto" DEBUG_FLAGS="--enable-debug"
 script:
-  - ./configure --enable-tempstore=yes --with-crypto-lib=$CRYPTO_LIB
+  - ./configure --enable-tempstore=yes --with-crypto-lib=$CRYPTO_LIB $DEBUG_FLAGS
   - make
   - make test
