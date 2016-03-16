@@ -393,7 +393,7 @@ static int sqlcipher_cipher_ctx_cmp(cipher_ctx *c1, cipher_ctx *c2) {
 static int sqlcipher_cipher_ctx_copy(cipher_ctx *target, cipher_ctx *source) {
   void *key = target->key; 
   void *hmac_key = target->hmac_key; 
-  void *provider = target->provider;
+  sqlcipher_provider *provider = target->provider;
   void *provider_ctx = target->provider_ctx;
 
   assert(provider->ctx_free == source->provider->ctx_free);
