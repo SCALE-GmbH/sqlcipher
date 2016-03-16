@@ -937,6 +937,13 @@ test_suite "wal" -description {
 
 test_suite "rtree" -description {
   All R-tree related tests. Provides coverage of source file rtree.c.
+} -presql {
+  # Disable HMAC for these tests as they are using a small page
+  # size with is incompatible with SQLCipher encryption because the
+  # usable part of a page falls below SQLite minimum value. Without
+  # cipher support these pragmas are just ignored.
+  pragma cipher_use_hmac = 'off';
+  pragma cipher_default_use_hmac = 'off';
 } -files [glob -nocomplain $::testdir/../ext/rtree/*.test]
 
 test_suite "no_optimization" -description {
