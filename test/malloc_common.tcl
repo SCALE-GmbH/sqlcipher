@@ -140,6 +140,10 @@ proc do_faultsim_test {name args} {
 
   set faultlist [list]
   foreach f $O(-faults) {
+    if {[info exists ::G(disable-oom-faults)] && [string match oom* $f]} {
+      puts "Skipping faultsim tests $name-$f"
+      continue
+    }
     set flist [array names FAULTSIM $f]
     if {[llength $flist]==0} { error "unknown fault: $f" }
     set faultlist [concat $faultlist $flist]
@@ -404,6 +408,11 @@ proc do_one_faultsim_test {testname args} {
 # successfully, the loop ends.
 #
 proc do_malloc_test {tn args} {
+  if {[info exists ::G(disable-oom-faults)]} {
+    puts "Skipping malloc test $tn"
+    return
+  }
+
   array unset ::mallocopts 
   array set ::mallocopts $args
 

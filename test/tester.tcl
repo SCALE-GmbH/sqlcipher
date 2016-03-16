@@ -388,6 +388,7 @@ if {[info exists cmdlinearg]==0} {
   #   --file-retry-delay=N
   #   --start=[$permutation:]$testfile
   #   --match=$pattern
+  #   --disable-oom-faults
   #
   set cmdlinearg(soft-heap-limit)    0
   set cmdlinearg(maxerror)        1000
@@ -456,6 +457,9 @@ if {[info exists cmdlinearg]==0} {
 
         set ::G(match) $cmdlinearg(match)
         if {$::G(match) == ""} {unset ::G(match)}
+      }
+      {^-+disable-oom-faults$} {
+        set ::G(disable-oom-faults)  1
       }
       default {
         lappend leftover $a

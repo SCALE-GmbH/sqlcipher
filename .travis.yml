@@ -20,4 +20,4 @@ env:
 script:
   - ./configure --enable-tempstore=yes --with-crypto-lib=$CRYPTO_LIB $DEBUG_FLAGS
   - make
-  - make test
+  - ./testfixture test/veryquick.test --disable-oom-faults
