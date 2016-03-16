@@ -19,5 +19,5 @@ env:
     - CRYPTO_LIB=openssl LDFLAGS="-lcrypto" DEBUG_FLAGS="--enable-debug"
 script:
   - ./configure --enable-tempstore=yes --with-crypto-lib=$CRYPTO_LIB $DEBUG_FLAGS
-  - make
+  - make testfixture
   - ./testfixture test/veryquick.test --disable-oom-faults
