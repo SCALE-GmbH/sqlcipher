@@ -2889,11 +2889,14 @@ static int decryptRecoverRootPage(Pager *pPager, u8 *page_data){
   int rc = SQLITE_OK;
   const int root_page = 1;
   int initial_page_size = pPager->pageSize;
+  u8 *buffer = NULL;
+  u32 buffer_size = initial_page_size;  /* Size and fill of buffer */
+
+  assert( assert_pager_state(pPager) );
 
   /* Save the original data as decryption is destructive. */
 
-  u8 *buffer = sqlite3_malloc(initial_page_size);
-  u32 buffer_size = initial_page_size;  /* Size and fill of buffer */
+  buffer = sqlite3_malloc(initial_page_size);
   if( buffer==0 ){
     return SQLITE_NOMEM;
   }
@@ -7408,10 +7411,6 @@ void sqlite3pager_sqlite3PagerSetCodec(
   void *pCodec
 ){
   sqlite3PagerSetCodec(pPager, xCodec, xCodecSizeChng, xCodecFree, pCodec); 
-}
-
-void sqlite3pager_sqlite3PagerSetError( Pager *pPager, int error) {
-  pPager->errCode = error;
 }
 
 #endif

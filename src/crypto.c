@@ -298,7 +298,6 @@ void* sqlite3Codec(void *iCtx, void *data, Pgno pgno, int mode) {
 
   /* call to derive keys if not present yet */
   if((rc = sqlcipher_codec_key_derive(ctx)) != SQLITE_OK) {
-   sqlcipher_codec_ctx_set_error(ctx, rc); 
    return NULL;
   }
 
