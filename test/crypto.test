@@ -2090,7 +2090,7 @@ if_built_with_commoncrypto verify-default-cipher {
     }
 } {aes-256-cbc}
 db close
-file delete -force test.db
+file delete -force test.db test.db-migrated
 
 do_test migrate-1.1.8-database-to-3x-format {
   file copy -force sqlcipher-1.1.8-testkey.db test.db
