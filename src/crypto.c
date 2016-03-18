@@ -56,11 +56,6 @@ static int codec_set_btree_to_codec_pagesize(sqlite3 *db, Db *pDb, codec_ctx *ct
   reserve_sz = sqlcipher_codec_ctx_get_reservesize(ctx);
 
   sqlite3_mutex_enter(db->mutex);
-  db->nextPagesize = page_sz; 
-
-  /* before forcing the page size we need to unset the BTS_PAGESIZE_FIXED flag, else  
-     sqliteBtreeSetPageSize will block the change  */
-  pDb->pBt->pBt->btsFlags &= ~BTS_PAGESIZE_FIXED;
   CODEC_TRACE(("codec_set_btree_to_codec_pagesize: sqlite3BtreeSetPageSize() size=%d reserve=%d\n", page_sz, reserve_sz));
   rc = sqlite3BtreeSetPageSize(pDb->pBt, page_sz, reserve_sz, 0);
   sqlite3_mutex_leave(db->mutex);
@@ -293,9 +288,16 @@ void* sqlite3Codec(void *iCtx, void *data, Pgno pgno, int mode) {
   void *kdf_salt = sqlcipher_codec_ctx_get_kdf_salt(ctx);
   CODEC_TRACE(("sqlite3Codec: entered pgno=%d, mode=%d, page_sz=%d\n", pgno, mode, page_sz));
 
+  /* Always take the current salt value from the first page when loading it.
+  ** The database file may have been initially written or restored from backup
+  ** and the salt value from the root page may have changed. */
+
+  if (pgno == 1 && mode < 6) {
+    sqlcipher_codec_ctx_load_kdf_salt(ctx, pData);
+  }
+
   /* call to derive keys if not present yet */
   if((rc = sqlcipher_codec_key_derive(ctx)) != SQLITE_OK) {
-   sqlcipher_codec_ctx_set_error(ctx, rc); 
    return NULL;
   }
 
@@ -330,6 +332,18 @@ void* sqlite3Codec(void *iCtx, void *data, Pgno pgno, int mode) {
   }
 }
 
+/*
+** Called by the pager to notify codec when a page size change is detected.
+** Prime example is the case that a database file is opened with a different
+** page size.
+*/
+static void sqlite3CodecSizeChange(void *pCodec, int pageSize, int reserve)
+{
+    codec_ctx *ctx = pCodec;
+    /* Allocation may fail but we can not report it here. */
+    (void) sqlcipher_codec_ctx_set_pagesize(ctx, pageSize);
+}
+
 void sqlite3FreeCodecArg(void *pCodecArg) {
   codec_ctx *ctx = (codec_ctx *) pCodecArg;
   if(pCodecArg == NULL) return;
@@ -349,7 +363,8 @@ int sqlite3CodecAttach(sqlite3* db, int nDb, const void *zKey, int nKey) {
     sqlite3_file *fd = sqlite3Pager_get_fd(pPager);
     codec_ctx *ctx;
 
-    sqlcipher_activate(); /* perform internal initialization for sqlcipher */
+    rc = sqlcipher_activate(); /* perform internal initialization for sqlcipher */
+    if (rc != SQLITE_OK) return rc;
 
     sqlite3_mutex_enter(db->mutex);
 
@@ -358,7 +373,7 @@ int sqlite3CodecAttach(sqlite3* db, int nDb, const void *zKey, int nKey) {
 
     if(rc != SQLITE_OK) return rc; /* initialization failed, do not attach potentially corrupted context */
 
-    sqlite3pager_sqlite3PagerSetCodec(sqlite3BtreePager(pDb->pBt), sqlite3Codec, NULL, sqlite3FreeCodecArg, (void *) ctx);
+    sqlite3pager_sqlite3PagerSetCodec(sqlite3BtreePager(pDb->pBt), sqlite3Codec, sqlite3CodecSizeChange, sqlite3FreeCodecArg, (void *) ctx);
 
     codec_set_btree_to_codec_pagesize(db, pDb, ctx);
 
@@ -373,6 +388,18 @@ int sqlite3CodecAttach(sqlite3* db, int nDb, const void *zKey, int nKey) {
     if(fd != NULL) { 
       sqlite3BtreeSetAutoVacuum(pDb->pBt, SQLITE_DEFAULT_AUTOVACUUM);
     }
+
+    /*
+    ** Attempt to begin a transaction to load the schema etc. from the DB.
+    ** This also detects the page size which does not work during the initial
+    ** open as hat code does not use the codec to decrypt the root page. */
+    {
+      int rc = sqlite3BtreeBeginTrans(pDb->pBt, 0);
+      if( rc==SQLITE_OK ){
+        sqlite3BtreeCommit(pDb->pBt);
+      }
+    }
+
     sqlite3_mutex_leave(db->mutex);
   }
   return SQLITE_OK;

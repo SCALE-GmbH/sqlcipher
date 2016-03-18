@@ -1,0 +1,23 @@
+language: c
+sudo: required
+dist: trusty
+addons:
+  apt:
+    packages:
+      - libssl-dev
+      - tcl-dev
+      - libtomcrypt-dev
+env:
+  global:
+    - CFLAGS="-O2 -fno-strict-aliasing
+              -DSQLITE_HAS_CODEC -DSQLITE_ENABLE_RTREE=1 -DSQLITE_ENABLE_COLUMN_METADATA
+              -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1 -DSQLITE_MAX_VARIABLE_NUMBER=250000"
+  matrix:
+    - CRYPTO_LIB=libtomcrypt
+    - CRYPTO_LIB=openssl LDFLAGS="-lcrypto"
+    - CRYPTO_LIB=libtomcrypt DEBUG_FLAGS="--enable-debug"
+    - CRYPTO_LIB=openssl LDFLAGS="-lcrypto" DEBUG_FLAGS="--enable-debug"
+script:
+  - ./configure --enable-tempstore=yes --with-crypto-lib=$CRYPTO_LIB $DEBUG_FLAGS
+  - make testfixture
+  - ./testfixture test/veryquick.test --disable-oom-faults

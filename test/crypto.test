@@ -431,6 +431,7 @@ do_test attach-database-with-default-key {
   execsql {
     PRAGMA key = 'testkey';
     PRAGMA cipher_add_random = "x'deadbaad'";
+    PRAGMA cipher_store_pass = 0;
     CREATE TABLE t2(a,b);
     INSERT INTO t2 VALUES ('test1', 'test2'); 
   } db2
@@ -898,15 +899,15 @@ do_test custom-pagesize {
 } {1000}
 db close
 
-# open the database with the default page size
-## and verfiy that it is not readable 
+# open the database with the default page size, the different page size
+# should be automatically detected
 do_test custom-pagesize-must-match {
   sqlite_orig db test.db
   catchsql {
     PRAGMA key = 'testkey';
     SELECT name FROM sqlite_master WHERE type='table';
   }
-} {1 {file is encrypted or is not a database}}
+} {0 t1}
 db close
 file delete -force test.db
 
@@ -2089,7 +2090,7 @@ if_built_with_commoncrypto verify-default-cipher {
     }
 } {aes-256-cbc}
 db close
-file delete -force test.db
+file delete -force test.db test.db-migrated
 
 do_test migrate-1.1.8-database-to-3x-format {
   file copy -force sqlcipher-1.1.8-testkey.db test.db

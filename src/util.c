@@ -1373,3 +1373,26 @@ u64 sqlite3LogEstToInt(LogEst x){
   }
   return (n+8)>>(3-x);
 }
+
+/*
+** Extract the page size from the database header. Returns valid page size
+** or zero if the data is invalid. pageData must point to a complete
+** database header.
+*/
+u32 sqlite3PageSizeFromHeader(u8 *pageData){
+  /* EVIDENCE-OF: R-51873-39618 The page size for a database file is
+  ** determined by the 2-byte integer located at an offset of 16 bytes from
+  ** the beginning of the database file. */
+  u32 pageSize = (pageData[16]<<8) | (pageData[17]<<16);
+
+  /* EVIDENCE-OF: R-25008-21688 The size of a page is a power of two
+  ** between 512 and 65536 inclusive. */
+  if( ((pageSize-1)&pageSize)!=0
+   || pageSize>SQLITE_MAX_PAGE_SIZE
+   || pageSize<=256
+  ){
+      pageSize = 0;
+  }
+
+  return pageSize;
+}

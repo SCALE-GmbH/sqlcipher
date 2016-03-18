@@ -24,7 +24,7 @@ source $testdir/tester.tcl
 if {$tcl_platform(platform)=="windows"} {
   set CLI "sqlite3.exe"
 } else {
-  set CLI "./sqlite3"
+  set CLI "./sqlcipher"
 }
 if {![file executable $CLI]} {
   finish_test
@@ -105,8 +105,8 @@ do_test shell1-1.7.1 {
   set res [catchcmd "-interactive test.db" ".quit"]
   set rc [lindex $res 0]
   list $rc \
-       [regexp {SQLite version} $res] \
-       [regexp {Enter ".help" for usage hints} $res]
+       [regexp {SQLCipher version} $res] \
+       [regexp {Enter ".help" for instructions} $res]
 } {0 1 1}
 
 # -batch               force batch I/O

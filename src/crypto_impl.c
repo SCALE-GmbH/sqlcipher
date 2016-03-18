@@ -108,12 +108,17 @@ sqlcipher_provider* sqlcipher_get_provider() {
   return default_provider;
 }
 
-void sqlcipher_activate() {
-  sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER));
+int sqlcipher_activate() {
+  int rc = SQLITE_NOMEM;
+  sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+
+  sqlite3_mutex_enter(mutex);
 
   if(sqlcipher_provider_mutex == NULL) {
     /* allocate a new mutex to guard access to the provider */
     sqlcipher_provider_mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+    if(sqlcipher_provider_mutex == NULL)
+      goto error_out;
   }
 
   /* check to see if there is a provider registered at this point
@@ -121,6 +126,8 @@ void sqlcipher_activate() {
      default provider */
   if(sqlcipher_get_provider() == NULL) {
     sqlcipher_provider *p = sqlcipher_malloc(sizeof(sqlcipher_provider)); 
+    if(!p)
+      goto error_out;
 #if defined (SQLCIPHER_CRYPTO_CC)
     extern int sqlcipher_cc_setup(sqlcipher_provider *p);
     sqlcipher_cc_setup(p);
@@ -137,8 +144,11 @@ void sqlcipher_activate() {
   }
 
   sqlcipher_activate_count++; /* increment activation count */
+  rc = SQLITE_OK;
 
+error_out:
   sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER));
+  return rc;
 }
 
 void sqlcipher_deactivate() {
@@ -265,9 +275,16 @@ void* sqlcipher_malloc(int sz) {
 static int sqlcipher_cipher_ctx_init(cipher_ctx **iCtx) {
   int rc;
   cipher_ctx *ctx;
-  *iCtx = (cipher_ctx *) sqlcipher_malloc(sizeof(cipher_ctx));
-  ctx = *iCtx;
+  *iCtx = 0;
+  ctx = (cipher_ctx *) sqlcipher_malloc(sizeof(cipher_ctx));
   if(ctx == NULL) return SQLITE_NOMEM;
+
+  /* Store the password by default because the original SQLite tests
+  ** assume that attached databases inherit the password. As the code
+  ** to inherit the derived key is flawed this is required to make the
+  ** tests run. Hopefully this can be reverted after that is fixed. */
+
+  ctx->store_pass = 1;
 
   ctx->provider = (sqlcipher_provider *) sqlcipher_malloc(sizeof(sqlcipher_provider));
   if(ctx->provider == NULL) return SQLITE_NOMEM;
@@ -286,6 +303,7 @@ static int sqlcipher_cipher_ctx_init(cipher_ctx **iCtx) {
   /* setup default flags */
   ctx->flags = default_flags;
 
+  *iCtx = ctx;
   return SQLITE_OK;
 }
 
@@ -375,13 +393,19 @@ static int sqlcipher_cipher_ctx_cmp(cipher_ctx *c1, cipher_ctx *c2) {
 static int sqlcipher_cipher_ctx_copy(cipher_ctx *target, cipher_ctx *source) {
   void *key = target->key; 
   void *hmac_key = target->hmac_key; 
-  void *provider = target->provider;
+  sqlcipher_provider *provider = target->provider;
   void *provider_ctx = target->provider_ctx;
+
+  assert(provider->ctx_free == source->provider->ctx_free);
 
   CODEC_TRACE(("sqlcipher_cipher_ctx_copy: entered target=%p, source=%p\n", target, source));
   sqlcipher_free(target->pass, target->pass_sz); 
   sqlcipher_free(target->keyspec, target->keyspec_sz); 
   memcpy(target, source, sizeof(cipher_ctx));
+
+  /* drop pointers to memory that is owned by another context */
+  target->pass = NULL;
+  target->keyspec = NULL;
 
   target->key = key; //restore pointer to previously allocated key data
   memcpy(target->key, source->key, CIPHER_MAX_KEY_SZ);
@@ -623,7 +647,6 @@ int sqlcipher_codec_ctx_get_flag(codec_ctx *ctx, unsigned int flag, int for_ctx)
 
 void sqlcipher_codec_ctx_set_error(codec_ctx *ctx, int error) {
   CODEC_TRACE(("sqlcipher_codec_ctx_set_error: ctx=%p, error=%d\n", ctx, error));
-  sqlite3pager_sqlite3PagerSetError(ctx->pBt->pBt->pPager, error);
   ctx->pBt->pBt->db->errCode = error;
 }
 
@@ -633,6 +656,16 @@ int sqlcipher_codec_ctx_get_reservesize(codec_ctx *ctx) {
 
 void* sqlcipher_codec_ctx_get_data(codec_ctx *ctx) {
   return ctx->buffer;
+}
+
+/*
+** Update the salt value from the first page of the database. This should
+** be done every time the first page is loaded since the database file
+** could have been replaced, e.g. from a backup.
+*/
+void sqlcipher_codec_ctx_load_kdf_salt(codec_ctx *ctx, u8 *page1_data) {
+  memcpy(ctx->kdf_salt, page1_data, ctx->kdf_salt_sz);
+  ctx->need_kdf_salt = 0;
 }
 
 void* sqlcipher_codec_ctx_get_kdf_salt(codec_ctx *ctx) {
@@ -673,8 +706,7 @@ int sqlcipher_get_default_pagesize() {
 int sqlcipher_codec_ctx_init(codec_ctx **iCtx, Db *pDb, Pager *pPager, sqlite3_file *fd, const void *zKey, int nKey) {
   int rc;
   codec_ctx *ctx;
-  *iCtx = sqlcipher_malloc(sizeof(codec_ctx));
-  ctx = *iCtx;
+  ctx = sqlcipher_malloc(sizeof(codec_ctx));
 
   if(ctx == NULL) return SQLITE_NOMEM;
 
@@ -720,6 +752,7 @@ int sqlcipher_codec_ctx_init(codec_ctx **iCtx, Db *pDb, Pager *pPager, sqlite3_f
 
   if((rc = sqlcipher_cipher_ctx_copy(ctx->write_ctx, ctx->read_ctx)) != SQLITE_OK) return rc;
 
+  *iCtx = ctx;
   return SQLITE_OK;
 }
 

@@ -164,7 +164,7 @@ static void cipher_bin2hex(const unsigned char* in, int sz, char *out) {
 typedef struct codec_ctx codec_ctx;
 
 /* activation and initialization */
-void sqlcipher_activate();
+int sqlcipher_activate();
 void sqlcipher_deactivate();
 int sqlcipher_codec_ctx_init(codec_ctx **, Db *, Pager *, sqlite3_file *, const void *, int);
 void sqlcipher_codec_ctx_free(codec_ctx **);
@@ -193,6 +193,7 @@ int sqlcipher_get_default_kdf_iter();
 int sqlcipher_codec_ctx_set_kdf_iter(codec_ctx *, int, int);
 int sqlcipher_codec_ctx_get_kdf_iter(codec_ctx *ctx, int);
 
+void sqlcipher_codec_ctx_load_kdf_salt(codec_ctx *ctx, u8 *page1_data);
 void* sqlcipher_codec_ctx_get_kdf_salt(codec_ctx *ctx);
 
 int sqlcipher_codec_ctx_set_fast_kdf_iter(codec_ctx *, int, int);
