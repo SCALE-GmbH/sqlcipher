@@ -110,7 +110,8 @@ if {[info command sqlite_orig]==""} {
       if {[info exists ::G(perm:sqlite3_args)]} {
         set args [concat $args $::G(perm:sqlite3_args)]
       }
-      if {[sqlite_orig -has-codec] && ![info exists ::do_not_use_codec]} {
+      if {[sqlite_orig -has-codec] && ![info exists ::do_not_use_codec]
+                                   && ![info exists ::G(disable-codec)]} {
         lappend args -key {xyzzy}
       }
 
@@ -389,6 +390,7 @@ if {[info exists cmdlinearg]==0} {
   #   --start=[$permutation:]$testfile
   #   --match=$pattern
   #   --disable-oom-faults
+  #   --disable-codec
   #
   set cmdlinearg(soft-heap-limit)    0
   set cmdlinearg(maxerror)        1000
@@ -460,6 +462,9 @@ if {[info exists cmdlinearg]==0} {
       }
       {^-+disable-oom-faults$} {
         set ::G(disable-oom-faults)  1
+      }
+      {^-+disable-codec$} {
+        set ::G(disable-codec)  1
       }
       default {
         lappend leftover $a

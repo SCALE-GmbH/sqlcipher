@@ -46,7 +46,8 @@ set old_pending_byte [sqlite3_test_control_pending_byte 0x40000000]
 
 # If the library is not compiled with has_codec support then
 # skip all tests in this file.
-if {![sqlite_orig -has-codec]} {
+if {![sqlite_orig -has-codec] || [info exists ::G(disable-codec)]} {
+  sqlite3_test_control_pending_byte $old_pending_byte
   finish_test
   return
 }
