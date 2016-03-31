@@ -22,4 +22,6 @@ env:
 script:
   - ./configure --enable-tempstore=yes --with-crypto-lib=$CRYPTO_LIB $DEBUG_FLAGS
   - make all testfixture
-  - ./testfixture test/veryquick.test --disable-oom-faults $TEST_OPTIONS
+  # the test suite assumes that it can't open 2000 files. If passes on my notebook with a file
+  # limit of 1024 open files so use the same value here.
+  - (ulimit -n 1024 && ./testfixture test/veryquick.test --disable-oom-faults $TEST_OPTIONS || exit $?)
