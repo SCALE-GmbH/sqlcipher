@@ -172,7 +172,7 @@ set main_loop_written 0
 proc write_main_loop {} {
   if {$::main_loop_written} return
   set wrapper ""
-  if {[sqlite3 -has-codec] && [info exists ::do_not_use_codec]==0} {
+  if {[sqlite3 -has-codec] && [info exists ::do_not_use_codec]==0 && ![info exists ::G(disable-codec)]} {
     set wrapper "
       rename sqlite3 sqlite_orig
       proc sqlite3 {args} {[info body sqlite3]}
