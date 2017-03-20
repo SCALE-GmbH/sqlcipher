@@ -22,7 +22,7 @@
 ** how JSONB might improve on that.)
 */
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_JSON1)
-#if !defined(_SQLITEINT_H_)
+#if !defined(SQLITEINT_H)
 #include "sqlite3ext.h"
 #endif
 SQLITE_EXTENSION_INIT1
@@ -49,13 +49,15 @@ SQLITE_EXTENSION_INIT1
 #ifdef sqlite3Isdigit
    /* Use the SQLite core versions if this routine is part of the
    ** SQLite amalgamation */
-#  define safe_isdigit(x) sqlite3Isdigit(x)
-#  define safe_isalnum(x) sqlite3Isalnum(x)
+#  define safe_isdigit(x)  sqlite3Isdigit(x)
+#  define safe_isalnum(x)  sqlite3Isalnum(x)
+#  define safe_isxdigit(x) sqlite3Isxdigit(x)
 #else
    /* Use the standard library for separate compilation */
 #include <ctype.h>  /* amalgamator: keep */
-#  define safe_isdigit(x) isdigit((unsigned char)(x))
-#  define safe_isalnum(x) isalnum((unsigned char)(x))
+#  define safe_isdigit(x)  isdigit((unsigned char)(x))
+#  define safe_isalnum(x)  isalnum((unsigned char)(x))
+#  define safe_isxdigit(x) isxdigit((unsigned char)(x))
 #endif
 
 /*
@@ -593,12 +595,13 @@ static void jsonReturn(
             c = z[++i];
             if( c=='u' ){
               u32 v = 0, k;
-              for(k=0; k<4 && i<n-2; i++, k++){
+              for(k=0; k<4; i++, k++){
+                assert( i<n-2 );
                 c = z[i+1];
-                if( c>='0' && c<='9' ) v = v*16 + c - '0';
-                else if( c>='A' && c<='F' ) v = v*16 + c - 'A' + 10;
-                else if( c>='a' && c<='f' ) v = v*16 + c - 'a' + 10;
-                else break;
+                assert( safe_isxdigit(c) );
+                if( c<='9' ) v = v*16 + c - '0';
+                else if( c<='F' ) v = v*16 + c - 'A' + 10;
+                else v = v*16 + c - 'a' + 10;
               }
               if( v==0 ) break;
               if( v<=0x7f ){
@@ -703,6 +706,15 @@ static int jsonParseAddNode(
 }
 
 /*
+** Return true if z[] begins with 4 (or more) hexadecimal digits
+*/
+static int jsonIs4Hex(const char *z){
+  int i;
+  for(i=0; i<4; i++) if( !safe_isxdigit(z[i]) ) return 0;
+  return 1;
+}
+
+/*
 ** Parse a single JSON value which begins at pParse->zJson[i].  Return the
 ** index of the first character past the end of the value parsed.
 **
@@ -776,8 +788,13 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       if( c==0 ) return -1;
       if( c=='\\' ){
         c = pParse->zJson[++j];
-        if( c==0 ) return -1;
-        jnFlags = JNODE_ESCAPE;
+        if( c=='"' || c=='\\' || c=='/' || c=='b' || c=='f'
+           || c=='n' || c=='r' || c=='t'
+           || (c=='u' && jsonIs4Hex(pParse->zJson+j+1)) ){
+          jnFlags = JNODE_ESCAPE;
+        }else{
+          return -1;
+        }
       }else if( c=='"' ){
         break;
       }
@@ -1212,6 +1229,26 @@ static void jsonTest1Func(
 ****************************************************************************/
 
 /*
+** Implementation of the json_QUOTE(VALUE) function.  Return a JSON value
+** corresponding to the SQL value input.  Mostly this means putting 
+** double-quotes around strings and returning the unquoted string "null"
+** when given a NULL input.
+*/
+static void jsonQuoteFunc(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonString jx;
+  UNUSED_PARAM(argc);
+
+  jsonInit(&jx, ctx);
+  jsonAppendValue(&jx, argv[0]);
+  jsonResult(&jx);
+  sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+}
+
+/*
 ** Implementation of the json_array(VALUE,...) function.  Return a JSON
 ** array that contains all values given in arguments.  Or if any argument
 ** is a BLOB, throw an error.
@@ -1625,7 +1662,7 @@ static void jsonObjectFinal(sqlite3_context *ctx){
   if( pStr ){
     jsonAppendChar(pStr, '}');
     if( pStr->bErr ){
-      if( pStr->bErr==0 ) sqlite3_result_error_nomem(ctx);
+      if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,
@@ -1903,9 +1940,9 @@ static int jsonEachColumn(
       /* For json_each() path and root are the same so fall through
       ** into the root case */
     }
-    case JEACH_ROOT: {
+    default: {
       const char *zRoot = p->zRoot;
-       if( zRoot==0 ) zRoot = "$";
+      if( zRoot==0 ) zRoot = "$";
       sqlite3_result_text(ctx, zRoot, -1, SQLITE_STATIC);
       break;
     }
@@ -2124,6 +2161,7 @@ int sqlite3Json1Init(sqlite3 *db){
     { "json_extract",        -1, 0,   jsonExtractFunc       },
     { "json_insert",         -1, 0,   jsonSetFunc           },
     { "json_object",         -1, 0,   jsonObjectFunc        },
+    { "json_quote",           1, 0,   jsonQuoteFunc         },
     { "json_remove",         -1, 0,   jsonRemoveFunc        },
     { "json_replace",        -1, 0,   jsonReplaceFunc       },
     { "json_set",            -1, 1,   jsonSetFunc           },

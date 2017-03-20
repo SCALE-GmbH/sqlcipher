@@ -217,11 +217,19 @@ static void sqlite3MallocAlarm(int nByte){
 ** Do a memory allocation with statistics and alarms.  Assume the
 ** lock is already held.
 */
-static int mallocWithAlarm(int n, void **pp){
-  int nFull;
+static void mallocWithAlarm(int n, void **pp){
   void *p;
+  int nFull;
   assert( sqlite3_mutex_held(mem0.mutex) );
+  assert( n>0 );
+
+  /* In Firefox (circa 2017-02-08), xRoundup() is remapped to an internal
+  ** implementation of malloc_good_size(), which must be called in debug
+  ** mode and specifically when the DMD "Dark Matter Detector" is enabled
+  ** or else a crash results.  Hence, do not attempt to optimize out the
+  ** following xRoundup() call. */
   nFull = sqlite3GlobalConfig.m.xRoundup(n);
+
   sqlite3StatusHighwater(SQLITE_STATUS_MALLOC_SIZE, n);
   if( mem0.alarmThreshold>0 ){
     sqlite3_int64 nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
@@ -245,7 +253,6 @@ static int mallocWithAlarm(int n, void **pp){
     sqlite3StatusUp(SQLITE_STATUS_MALLOC_COUNT, 1);
   }
   *pp = p;
-  return nFull;
 }
 
 /*
@@ -519,7 +526,7 @@ void *sqlite3Realloc(void *pOld, u64 nBytes){
     sqlite3_mutex_enter(mem0.mutex);
     sqlite3StatusHighwater(SQLITE_STATUS_MALLOC_SIZE, (int)nBytes);
     nDiff = nNew - nOld;
-    if( sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED) >= 
+    if( nDiff>0 && sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED) >= 
           mem0.alarmThreshold-nDiff ){
       sqlite3MallocAlarm(nDiff);
     }
@@ -726,9 +733,8 @@ char *sqlite3DbStrDup(sqlite3 *db, const char *z){
   if( z==0 ){
     return 0;
   }
-  n = sqlite3Strlen30(z) + 1;
-  assert( (n&0x7fffffff)==n );
-  zNew = sqlite3DbMallocRaw(db, (int)n);
+  n = strlen(z) + 1;
+  zNew = sqlite3DbMallocRaw(db, n);
   if( zNew ){
     memcpy(zNew, z, n);
   }
@@ -795,7 +801,7 @@ void sqlite3OomClear(sqlite3 *db){
 static SQLITE_NOINLINE int apiOomError(sqlite3 *db){
   sqlite3OomClear(db);
   sqlite3Error(db, SQLITE_NOMEM);
-  return SQLITE_NOMEM;
+  return SQLITE_NOMEM_BKPT;
 }
 
 /*
