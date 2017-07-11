@@ -151,14 +151,26 @@ static int sqlcipher_openssl_random (void *ctx, void *buffer, int length) {
 }
 
 static int sqlcipher_openssl_hmac(void *ctx, unsigned char *hmac_key, int key_sz, unsigned char *in, int in_sz, unsigned char *in2, int in2_sz, unsigned char *out) {
-  HMAC_CTX hctx;
   unsigned int outlen;
-  HMAC_CTX_init(&hctx);
-  HMAC_Init_ex(&hctx, hmac_key, key_sz, EVP_sha1(), NULL);
-  HMAC_Update(&hctx, in, in_sz);
-  HMAC_Update(&hctx, in2, in2_sz);
-  HMAC_Final(&hctx, out, &outlen);
-  HMAC_CTX_cleanup(&hctx);
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+  HMAC_CTX hctx;
+  HMAC_CTX *hctx_p = &hctx;
+  HMAC_CTX_init(hctx_p);
+#else
+  HMAC_CTX *hctx_p = HMAC_CTX_new();
+  if (!hctx_p)
+    return SQLITE_ERROR;
+#endif
+
+  HMAC_Init_ex(hctx_p, hmac_key, key_sz, EVP_sha1(), NULL);
+  HMAC_Update(hctx_p, in, in_sz);
+  HMAC_Update(hctx_p, in2, in2_sz);
+  HMAC_Final(hctx_p, out, &outlen);
+  HMAC_CTX_cleanup(hctx_p);
+
+#if OPENSSL_VERSION_NUMBER >= 0x1010000fL
+  HMAC_CTX_free(hctx_p);
+#endif
   return SQLITE_OK; 
 }
 
