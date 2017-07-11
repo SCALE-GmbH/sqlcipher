@@ -166,9 +166,10 @@ static int sqlcipher_openssl_hmac(void *ctx, unsigned char *hmac_key, int key_sz
   HMAC_Update(hctx_p, in, in_sz);
   HMAC_Update(hctx_p, in2, in2_sz);
   HMAC_Final(hctx_p, out, &outlen);
-  HMAC_CTX_cleanup(hctx_p);
 
-#if OPENSSL_VERSION_NUMBER >= 0x1010000fL
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+  HMAC_CTX_cleanup(hctx_p);
+#else
   HMAC_CTX_free(hctx_p);
 #endif
   return SQLITE_OK; 
