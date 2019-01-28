@@ -43,7 +43,7 @@ do_test 1.0 {
 } {wal}
 
 do_catchsql_test 1.1 {
-  PRAGMA page_size = 4096;
+  PRAGMA page_size = 1024;
   VACUUM;
 } {0 {}}
 
@@ -63,7 +63,7 @@ do_test 2.0 {
 } {wal}
 
 do_catchsql_test 2.1 {
-  PRAGMA page_size = 4096;
+  PRAGMA page_size = 1024;
   VACUUM;
 } {0 {}}
 
@@ -83,7 +83,7 @@ do_test 3.0 {
 } {wal}
 
 do_execsql_test 3.1 {
-  PRAGMA page_size = 4096;
+  PRAGMA page_size = 1024;
   SELECT name FROM sqlite_master;
 } {t1}
 
