@@ -34,7 +34,7 @@ proc reopen_database {} {
   sqlite3 db test.db
   db cache size 0
   execsql {
-    pragma page_size=512;
+    pragma page_size=1024;
     pragma auto_vacuum=2;
     pragma cache_size=16;
   }
@@ -51,7 +51,7 @@ for {set iFail 1} {$iFail<200} {incr iFail} {
   reopen_database
   execsql { pragma locking_mode=exclusive }
   set nRow [db one {SELECT count(*) FROM a}]
-  
+
   # Dirty (at least) one of the pages in the cache.
   do_test tkt2565-1.$iFail.1 {
     execsql {
@@ -59,7 +59,7 @@ for {set iFail 1} {$iFail<200} {incr iFail} {
       INSERT INTO a VALUES(1, 'ABCDEFGHIJKLMNOP');
     }
   } {}
-  
+
   # Now try to commit the transaction. Cause an IO error to occur
   # within this operation, which moves the pager into the error state.
   #
