@@ -1,0 +1,11 @@
+image: debian:stretch
+
+test:
+  before_script:
+    - apt-get update
+    - apt-get install --yes python3-dev build-essential
+
+  script:
+    - ./scale/scale_include.sh
+    - ./scale/scale_build.sh
+    - ./scale/scale_test_list.sh

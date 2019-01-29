@@ -60,9 +60,7 @@ proc test_suite {name args} {
 test_suite "scale-test-suite" -prefix "" -description {
   scale-test-suite - manual managed list running tests
 } -files {
-  8_3_names.test
-  aggerror.test
-  aggnested.test
+#SED_RELACE_WITH_TEST_FILE#
 }
 
 

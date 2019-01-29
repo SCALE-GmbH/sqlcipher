@@ -1,0 +1,9 @@
+8_3_names.test
+aggerror.test
+aggnested.test
+
+#test comment
+ext/rtree/rtree1.test
+ext/rtree/rtreeF.test
+ext/rtree/tkt3363.test
+alias.test
