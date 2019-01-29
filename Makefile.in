@@ -530,6 +530,10 @@ EXTHDR += \
 EXTHDR += \
   $(TOP)/ext/rtree/sqlite3rtree.h
 
+# executables needed for testing
+#
+TESTPROGS = testfixture$(TEXE) sqlcipher$(TEXE) sqlite3$(TEXE) sqldiff$(TEXE)
+
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
@@ -553,6 +557,11 @@ libtclsqlite3.la:	tclsqlite.lo libsqlcipher.la
 		-avoid-version
 
 sqlcipher$(TEXE):	$(TOP)/src/shell.c libsqlcipher.la sqlite3.h
+	$(LTLINK) $(READLINE_FLAGS) \
+		-o $@ $(TOP)/src/shell.c libsqlcipher.la \
+		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
+
+sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlcipher.la sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) \
 		-o $@ $(TOP)/src/shell.c libsqlcipher.la \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
