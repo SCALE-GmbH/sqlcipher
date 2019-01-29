@@ -3,7 +3,7 @@ image: debian:stretch
 test:
   before_script:
     - apt-get update
-    - apt-get install --yes python3-dev build-essential
+    - apt-get install --yes build-essential libssl-dev libcrypto++-dev
 
   script:
     - ./scale/scale_include.sh
