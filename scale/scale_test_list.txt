@@ -27,7 +27,6 @@ async3.test
 async4.test
 async5.test
 atof1.test
-attach.test
 attach2.test
 attach3.test
 attach4.test
@@ -42,7 +41,6 @@ autoindex4.test
 avtrans.test
 backcompat.test
 backup.test
-backup2.test
 badutf.test
 badutf2.test
 between.test
@@ -116,7 +114,6 @@ cse.test
 ctime.test
 date.test
 default.test
-delete.test
 delete2.test
 delete3.test
 descidx1.test
@@ -171,7 +168,6 @@ ext/rtree/rtreeD.test
 ext/rtree/rtreeE.test
 ext/rtree/rtreeF.test
 ext/rtree/tkt3363.test
-extension01.test
 fallocate.test
 filectrl.test
 filefmt.test
@@ -441,8 +437,6 @@ savepoint2.test
 savepoint5.test
 savepoint7.test
 scanstatus.test
-schema.test
-schema2.test
 schema4.test
 schema5.test
 select1.test
@@ -503,7 +497,6 @@ tableapi.test
 tableopts.test
 tclsqlite.test
 tempdb.test
-temptable.test
 temptrigger.test
 thread002.test
 thread004.test
@@ -613,7 +606,6 @@ tkt3357.test
 tkt3419.test
 tkt3424.test
 tkt3442.test
-tkt3457.test
 tkt3461.test
 tkt3493.test
 tkt3508.test
@@ -698,7 +690,6 @@ vtabC.test
 vtabD.test
 vtabE.test
 vtabF.test
-wal2.test
 wal4.test
 wal6.test
 wal64k.test

@@ -9,3 +9,9 @@ test:
     - ./scale/scale_include.sh
     - ./scale/scale_build.sh
     - ./scale/scale_test_list.sh
+  artifacts:
+      expire_in: 7 day
+      when: always
+      name: sqlcipher_tests_results
+      paths:
+        - scale/tests_results.*

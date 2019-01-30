@@ -4,8 +4,8 @@ set -eo pipefail
 # --------------------------------------------------------------
 # config
 
-OUTPUT_BASE="./scale/results_$(date '+%Y%m%d-%H%M%S')"
-RESULT_FILE="${OUTPUT_BASE}.res"
+OUTPUT_BASE="./scale/tests_results"
+RESULT_FILE="${OUTPUT_BASE}.csv"
 OUTPUT_LOG="${OUTPUT_BASE}.log"
 
 TEST_LIST_FILE="scale/scale_test_list.txt"
