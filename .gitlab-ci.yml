@@ -3,7 +3,7 @@ image: debian:stretch
 test:
   before_script:
     - apt-get update
-    - apt-get install --yes build-essential libssl-dev libcrypto++-dev tcl
+    - apt-get install --yes build-essential libssl-dev libcrypto++-dev tcl tcl-dev
 
   script:
     - ./scale/scale_include.sh
