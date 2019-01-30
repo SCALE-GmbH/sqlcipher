@@ -403,9 +403,7 @@ orderby5.test
 orderby6.test
 orderby7.test
 orderby8.test
-oserror.test
 ovfl.test
-pager1.test
 pager2.test
 pager3.test
 pager4.test
