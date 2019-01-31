@@ -279,6 +279,9 @@ int sqlcipher_codec_pragma(sqlite3* db, int iDb, Parse *pParse, const char *zLef
  * decrypt mode - expected to return a pointer to pData, with
  *   the data decrypted in the input buffer
  */
+
+#define BUFFER_CHECK
+
 void* sqlite3Codec(void *iCtx, void *data, Pgno pgno, int mode) {
   codec_ctx *ctx = (codec_ctx *) iCtx;
   int offset = 0, rc = 0;
@@ -308,6 +311,13 @@ void* sqlite3Codec(void *iCtx, void *data, Pgno pgno, int mode) {
     case 0: /* decrypt */
     case 2:
     case 3:
+      #ifdef BUFFER_CHECK
+      if (!buffer) {
+        CODEC_TRACE("sqlite3Codec: buffer is NULL\n");
+        sqlcipher_codec_ctx_set_error(ctx, SQLITE_NOMEM);
+        return NULL;
+      }
+      #endif //BUFFER_CHECK
       if(pgno == 1) memcpy(buffer, SQLITE_FILE_HEADER, FILE_HEADER_SZ); /* copy file header to the first 16 bytes of the page */ 
       rc = sqlcipher_page_cipher(ctx, CIPHER_READ_CTX, pgno, CIPHER_DECRYPT, page_sz - offset, pData + offset, (unsigned char*)buffer + offset);
       if(rc != SQLITE_OK) sqlcipher_codec_ctx_set_error(ctx, rc);
@@ -315,12 +325,26 @@ void* sqlite3Codec(void *iCtx, void *data, Pgno pgno, int mode) {
       return pData;
       break;
     case 6: /* encrypt */
+      #ifdef BUFFER_CHECK
+      if (!buffer) {
+        CODEC_TRACE("sqlite3Codec: buffer is NULL\n");
+        sqlcipher_codec_ctx_set_error(ctx, SQLITE_NOMEM);
+        return NULL;
+      }
+      #endif //BUFFER_CHECK      
       if(pgno == 1) memcpy(buffer, kdf_salt, FILE_HEADER_SZ); /* copy salt to output buffer */ 
       rc = sqlcipher_page_cipher(ctx, CIPHER_WRITE_CTX, pgno, CIPHER_ENCRYPT, page_sz - offset, pData + offset, (unsigned char*)buffer + offset);
       if(rc != SQLITE_OK) sqlcipher_codec_ctx_set_error(ctx, rc);
       return buffer; /* return persistent buffer data, pData remains intact */
       break;
     case 7:
+      #ifdef BUFFER_CHECK
+      if (!buffer) {
+        CODEC_TRACE("sqlite3Codec: buffer is NULL\n");
+        sqlcipher_codec_ctx_set_error(ctx, SQLITE_NOMEM);
+        return NULL;
+      }
+      #endif //BUFFER_CHECK    
       if(pgno == 1) memcpy(buffer, kdf_salt, FILE_HEADER_SZ); /* copy salt to output buffer */ 
       rc = sqlcipher_page_cipher(ctx, CIPHER_READ_CTX, pgno, CIPHER_ENCRYPT, page_sz - offset, pData + offset, (unsigned char*)buffer + offset);
       if(rc != SQLITE_OK) sqlcipher_codec_ctx_set_error(ctx, rc);
