@@ -734,17 +734,12 @@ without_rowid6.test
 zeroblob.test
 zerodamage.test
 #added for testing
-attach.test
-backup2.test
-extension01.test
 mallocC.test
-oserror.test
-pager1.test
 savepoint.test
 schema.test
 schema2.test
 schema3.test
 shared2.test
-tkt3457.test
+thread001.test
 unixexcl.test
-wal2.test
+
