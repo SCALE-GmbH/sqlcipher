@@ -436,8 +436,6 @@ savepoint2.test
 savepoint5.test
 savepoint7.test
 scanstatus.test
-schema.test
-schema2.test
 schema3.test
 schema4.test
 schema5.test
