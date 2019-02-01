@@ -362,6 +362,7 @@ malloc5.test
 malloc7.test
 malloc9.test
 mallocB.test
+mallocC.test
 mallocH.test
 mallocL.test
 manydb.test
@@ -431,10 +432,14 @@ rollback.test
 rollback2.test
 rowhash.test
 rowid.test
+savepoint.test
 savepoint2.test
 savepoint5.test
 savepoint7.test
 scanstatus.test
+schema.test
+schema2.test
+schema3.test
 schema4.test
 schema5.test
 select1.test
@@ -455,6 +460,7 @@ selectF.test
 selectG.test
 server1.test
 shared.test
+shared2.test
 shared3.test
 shared4.test
 shared6.test
@@ -661,6 +667,7 @@ types2.test
 types3.test
 unique.test
 unique2.test
+unixexcl.test
 unordered.test
 update.test
 uri.test
@@ -733,13 +740,4 @@ without_rowid5.test
 without_rowid6.test
 zeroblob.test
 zerodamage.test
-#added for testing
-mallocC.test
-savepoint.test
-schema.test
-schema2.test
-schema3.test
-shared2.test
-thread001.test
-unixexcl.test
 
