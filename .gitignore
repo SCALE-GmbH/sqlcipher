@@ -71,3 +71,6 @@ test2.x
 testdb
 tf_main.tcl
 tf_main2.tcl
+test/scale_permutations.test
+sqldiff
+sv_test.db*
