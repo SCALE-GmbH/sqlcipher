@@ -129,6 +129,8 @@ proc do_faultsim_test {name args} {
   set DEFAULT(-test)          ""
   set DEFAULT(-install)       ""
   set DEFAULT(-uninstall)     ""
+  set DEFAULT(-start)          1
+  set DEFAULT(-end)            0
 
   fix_testname name
 
@@ -140,17 +142,14 @@ proc do_faultsim_test {name args} {
 
   set faultlist [list]
   foreach f $O(-faults) {
-    if {[info exists ::G(disable-oom-faults)] && [string match oom* $f]} {
-      puts "Skipping faultsim tests $name-$f"
-      continue
-    }
     set flist [array names FAULTSIM $f]
     if {[llength $flist]==0} { error "unknown fault: $f" }
     set faultlist [concat $faultlist $flist]
   }
 
   set testspec [list -prep $O(-prep) -body $O(-body) \
-      -test $O(-test) -install $O(-install) -uninstall $O(-uninstall)
+      -test $O(-test) -install $O(-install) -uninstall $O(-uninstall) \
+      -start $O(-start) -end $O(-end)
   ]
   foreach f [lsort -unique $faultlist] {
     eval do_one_faultsim_test "$name-$f" $FAULTSIM($f) $testspec
@@ -293,7 +292,7 @@ proc faultsim_test_result_int {args} {
   upvar testrc testrc testresult testresult testnfail testnfail
   set t [list $testrc $testresult]
   set r $args
-  if { ($testnfail==0 && $t != [lindex $r 0]) || [lsearch $r $t]<0 } {
+  if { ($testnfail==0 && $t != [lindex $r 0]) || [lsearch -exact $r $t]<0 } {
     error "nfail=$testnfail rc=$testrc result=$testresult list=$r"
   }
 }
@@ -322,6 +321,8 @@ proc faultsim_test_result_int {args} {
 #
 #     -test             Script to execute after -body.
 #
+#     -start            Index of first fault to inject (default 1)
+#
 proc do_one_faultsim_test {testname args} {
 
   set DEFAULT(-injectstart)     "expr"
@@ -334,6 +335,8 @@ proc do_one_faultsim_test {testname args} {
   set DEFAULT(-test)            ""
   set DEFAULT(-install)         ""
   set DEFAULT(-uninstall)       ""
+  set DEFAULT(-start)           1
+  set DEFAULT(-end)             0
 
   array set O [array get DEFAULT]
   array set O $args
@@ -350,7 +353,10 @@ proc do_one_faultsim_test {testname args} {
   eval $O(-install)
 
   set stop 0
-  for {set iFail 1} {!$stop} {incr iFail} {
+  for {set iFail $O(-start)}                        \
+      {!$stop && ($O(-end)==0 || $iFail<=$O(-end))} \
+      {incr iFail}                                  \
+  {
 
     # Evaluate the -prep script.
     #
@@ -408,11 +414,6 @@ proc do_one_faultsim_test {testname args} {
 # successfully, the loop ends.
 #
 proc do_malloc_test {tn args} {
-  if {[info exists ::G(disable-oom-faults)]} {
-    puts "Skipping malloc test $tn"
-    return
-  }
-
   array unset ::mallocopts 
   array set ::mallocopts $args
 

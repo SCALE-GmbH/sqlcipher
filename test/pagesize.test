@@ -49,6 +49,12 @@ do_test pagesize-1.4 {
     PRAGMA page_size;
   }
 } 1024
+do_test pagesize-1.5 {
+  execsql {
+    PRAGMA page_size=512;
+    PRAGMA page_size;
+  }
+} 512
 if {![info exists SQLITE_MAX_PAGE_SIZE] || $SQLITE_MAX_PAGE_SIZE>=8192} {
   do_test pagesize-1.6 {
     execsql {
@@ -69,7 +75,7 @@ if {![info exists SQLITE_MAX_PAGE_SIZE] || $SQLITE_MAX_PAGE_SIZE>=8192} {
     }
   } 8192
 }  
-foreach PGSZ {2048 4096 8192} {
+foreach PGSZ {512 2048 4096 8192} {
   if {[info exists SQLITE_MAX_PAGE_SIZE]
            && $SQLITE_MAX_PAGE_SIZE<$PGSZ} continue
   ifcapable memorydb {

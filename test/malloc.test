@@ -32,12 +32,6 @@ if {!$MEMDEBUG} {
    return
 }
 
-if {[info exists ::G(disable-oom-faults)]} {
-   puts "Skipping malloc tests: disabled by --disable-oom-faults..."
-   finish_test
-   return
-}
-
 # Do a couple of memory dumps just to exercise the memory dump logic
 # that that we can say that we have.
 #
