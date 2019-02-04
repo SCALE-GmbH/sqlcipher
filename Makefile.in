@@ -563,6 +563,7 @@ EXTHDR += \
 #
 TESTPROGS = \
   testfixture$(TEXE) \
+  sqlcipher$(TEXE) \
   sqlite3$(TEXE) \
   sqlite3_analyzer$(TEXE) \
   sqldiff$(TEXE) \
@@ -597,7 +598,7 @@ DBFUZZ_OPT =
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	sqlite3.h libsqlcipher.la sqlcipher$(TEXE) $(HAVE_TCL:1=libtclsqlite3.la)
+all:	sqlite3.h libsqlcipher.la sqlcipher$(TEXE) $(HAVE_TCL:1=libtclsqlite3.la) $(TESTPROGS)
 
 Makefile: $(TOP)/Makefile.in
 	./config.status
@@ -617,6 +618,12 @@ libtclsqlite3.la:	tclsqlite.lo libsqlcipher.la
 		-avoid-version
 
 sqlcipher$(TEXE):	$(TOP)/src/shell.c libsqlcipher.la sqlite3.h
+	$(LTLINK) $(READLINE_FLAGS) $(SHELL_OPT) \
+		-o $@ $(TOP)/src/shell.c libsqlcipher.la \
+		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
+
+# analog zu "sqlcipher$(TEXE):"
+sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlcipher.la sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) $(SHELL_OPT) \
 		-o $@ $(TOP)/src/shell.c libsqlcipher.la \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
