@@ -14,4 +14,4 @@ test:
       when: always
       name: sqlcipher_tests_results
       paths:
-        - scale/tests_results*
+        - ./scale/test_results*
