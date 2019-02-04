@@ -362,7 +362,6 @@ malloc5.test
 malloc7.test
 malloc9.test
 mallocB.test
-mallocC.test
 mallocH.test
 mallocL.test
 manydb.test
