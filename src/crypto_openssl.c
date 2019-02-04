@@ -297,7 +297,15 @@ static int sqlcipher_openssl_fips_status(void *ctx) {
 #endif
 }
 
+#define SCALE_ASANFIX_SQLCIPHER_OPENSSL_SETUP_P_CHECK
+
 int sqlcipher_openssl_setup(sqlcipher_provider *p) {
+  #ifdef SCALE_ASANFIX_SQLCIPHER_OPENSSL_SETUP_P_CHECK
+  if (p == NULL) {
+    CODEC_TRACE("sqlcipher_openssl_setup: p == NULL !?\n");
+    return SQLITE_ERROR;
+  }
+  #endif //SCALE_ASANFIX_SQLCIPHER_OPENSSL_SETUP_P_CHECK
   p->activate = sqlcipher_openssl_activate;  
   p->deactivate = sqlcipher_openssl_deactivate;
   p->get_provider_name = sqlcipher_openssl_get_provider_name;
