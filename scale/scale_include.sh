@@ -7,11 +7,13 @@
 # export TESTSUITE=test/full.test TEST_OPTIONS="--disable-codec" CRYPTO_LIB=openssl LDFLAGS="-lcrypto"
 
 unset CFLAGS
+unset CXXFLAGS
 unset CRYPTO_LIB
 unset DEBUG_FLAGS
 unset LDFLAGS
 unset LIB
 unset TEST_OPTIONS
+
 
 # common
 
@@ -27,16 +29,33 @@ export LDFLAGS="-lcrypto"
 
 # debug + release config
 
-if [ "RELEASE" == "RELEASE" ] ; then
-	export CFLAGS="-O2 $CFLAGS"
-else
-	export CFLAGS="-ggdb $CFLAGS -DSQLITE_TEST"
+TMP_CONFIG_MODE=""
+if [ "$TMP_CONFIG_MODE" == "DEBUG" ] ; then
+	export CFLAGS="-ggdb $CFLAGS"
 	export DEBUG_FLAGS="--enable-debug"
+
+elif [ "$TMP_CONFIG_MODE" == "ASAN" ] ; then
+	export ASAN_OPTIONS=detect_leaks=0
+
+	ASAN_FLAGS="-O2 -fsanitize=address -fno-omit-frame-pointer"
+	export CFLAGS="-ggdb $ASAN_FLAGS $CFLAGS"
+	export CXXFLAGS="$ASAN_FLAGS $CXXFLAGS"
+	#export DEBUG_FLAGS="--enable-debug"
+	export LDFLAGS="-fsanitize=address -static-libasan $LDFLAGS"
+
+	unset ASAN_FLAGS
+
+else  # default: RELEASE
+	export CFLAGS="-O2 $CFLAGS"
 fi
+unset TMP_CONFIG_MODE
+
 
 echo "CFLAGS=$CFLAGS"
+echo "CXXFLAGS=$CXXFLAGS"
 echo "CRYPTO_LIB=$CRYPTO_LIB"
 echo "DEBUG_FLAGS=$DEBUG_FLAGS"
 echo "LDFLAGS=$LDFLAGS"
 echo "LIB=$LIB"
 echo "TEST_OPTIONS=$TEST_OPTIONS"
+echo "ASAN_OPTIONS=$ASAN_OPTIONS"
