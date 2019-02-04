@@ -7,6 +7,7 @@ set -eo pipefail
 OUTPUT_BASE="./scale/test_results"
 RESULT_FILE="${OUTPUT_BASE}.csv"
 OUTPUT_LOG="${OUTPUT_BASE}.log"
+OUTPUT_TMP="${OUTPUT_BASE}.tmp"
 
 TEST_LIST_FILE="scale/scale_test_list.txt"
 
@@ -73,8 +74,10 @@ while read LINE_IN; do
     cp -f $PERM_TEMPLATE $PERM_FILE
     sed -i "s%#SED_RELACE_WITH_TEST_FILE#%  ${LINE}%" "$PERM_FILE"
 
+    rm "$OUTPUT_TMP" >/dev/null 2>&1
+
     SECONDS=0
-    OUTPUT=$(./testfixture $PERM_FILE "scale-test-suite" 2>&1)
+    ./testfixture $PERM_FILE "scale-test-suite" >"$OUTPUT_TMP" 2>&1
     RC=$?
     DURATION=$SECONDS
 
@@ -84,8 +87,10 @@ while read LINE_IN; do
     else
         COUNT_ERRORS=$((COUNT_ERRORS+1))
         TEST_RESULT='ERROR'
-        echo -e "$OUTPUT" | tee -a $OUTPUT_LOG
+        cat "$OUTPUT_TMP" | grep -v "... OK" | tee -a $OUTPUT_LOG
     fi
+
+    rm "$OUTPUT_TMP" >/dev/null 2>&1
 
     echo "$TEST_RESULT (${DURATION}s)" | tee -a $OUTPUT_LOG
     echo "$LINE;$TEST_RESULT" >> $RESULT_FILE
