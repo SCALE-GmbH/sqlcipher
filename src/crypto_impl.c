@@ -324,6 +324,9 @@ void* sqlcipher_malloc(int sz) {
   * returns SQLITE_OK if initialization was successful
   * returns SQLITE_NOMEM if an error occured allocating memory
   */
+
+#define SCALE_ASANFIX_SQLCIPHER_CIPHER_CTX_INIT_DEFPROV
+
 static int sqlcipher_cipher_ctx_init(cipher_ctx **iCtx) {
   int rc;
   cipher_ctx *ctx;
@@ -331,6 +334,13 @@ static int sqlcipher_cipher_ctx_init(cipher_ctx **iCtx) {
   *iCtx = (cipher_ctx *) sqlcipher_malloc(sizeof(cipher_ctx));
   ctx = *iCtx;
   if(ctx == NULL) return SQLITE_NOMEM;
+
+  #ifdef SCALE_ASANFIX_SQLCIPHER_CIPHER_CTX_INIT_DEFPROV
+  if (default_provider == NULL) {
+    CODEC_TRACE("sqlcipher_cipher_ctx_init: default_provider == NULL\n");
+    return SQLITE_ERROR;
+  }
+  #endif //SCALE_ASANFIX_SQLCIPHER_CIPHER_CTX_INIT_DEFPROV
 
   CODEC_TRACE("sqlcipher_cipher_ctx_init: allocating provider\n");
   ctx->provider = (sqlcipher_provider *) sqlcipher_malloc(sizeof(sqlcipher_provider));
