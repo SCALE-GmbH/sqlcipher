@@ -87,7 +87,7 @@ while read LINE_IN; do
     else
         COUNT_ERRORS=$((COUNT_ERRORS+1))
         TEST_RESULT='ERROR'
-        cat "$OUTPUT_TMP" | grep -v "... OK" | tee -a $OUTPUT_LOG
+        cat "$OUTPUT_TMP" | grep -v "... Ok" | tee -a $OUTPUT_LOG
     fi
 
     rm "$OUTPUT_TMP" >/dev/null 2>&1
