@@ -4,7 +4,7 @@ set -eo pipefail
 # --------------------------------------------------------------
 # config
 
-OUTPUT_BASE="./scale/tests_results"
+OUTPUT_BASE="./scale/test_results"
 RESULT_FILE="${OUTPUT_BASE}.csv"
 OUTPUT_LOG="${OUTPUT_BASE}.log"
 OUTPUT_TMP="${OUTPUT_BASE}.tmp"
