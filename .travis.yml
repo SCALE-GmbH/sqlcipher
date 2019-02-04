@@ -1,0 +1,29 @@
+language: c
+sudo: required
+dist: trusty
+addons:
+  apt:
+    packages:
+      - libssl-dev
+      - tcl-dev
+      - libtomcrypt-dev
+env:
+  global:
+    - CFLAGS="-O2 -fno-strict-aliasing
+              -DSQLITE_HAS_CODEC -DSQLITE_ENABLE_RTREE=1 -DSQLITE_ENABLE_COLUMN_METADATA
+              -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1 -DSQLITE_MAX_VARIABLE_NUMBER=250000 -DSQLITE_ENABLE_API_ARMOR"
+  matrix:
+    - CRYPTO_LIB=libtomcrypt
+    - CRYPTO_LIB=libtomcrypt DEBUG_FLAGS="--enable-debug"
+    - CRYPTO_LIB=openssl LDFLAGS="-lcrypto"
+    - CRYPTO_LIB=openssl LDFLAGS="-lcrypto" DEBUG_FLAGS="--enable-debug"
+    - TEST_OPTIONS="--disable-codec" CRYPTO_LIB=openssl LDFLAGS="-lcrypto"
+    - TEST_OPTIONS="--disable-codec" CRYPTO_LIB=openssl LDFLAGS="-lcrypto" DEBUG_FLAGS="--enable-debug"
+    - TESTSUITE=test/full.test TEST_OPTIONS="--disable-codec" CRYPTO_LIB=openssl LDFLAGS="-lcrypto"
+script:
+  - ./configure --enable-tempstore=yes --with-crypto-lib=$CRYPTO_LIB $DEBUG_FLAGS
+  - make all testfixture
+  # the test suite assumes that it can't open 2000 files. If passes on my notebook with a file
+  # limit of 1024 open files so use the same value here.
+  - (ulimit -n 1024 && tclsh tool/travis_wrapper.tcl
+    ./testfixture "test/scale_permutations.test" --disable-oom-faults "scale-test-suite" $TEST_OPTIONS || exit $?)
