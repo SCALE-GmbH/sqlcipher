@@ -1176,10 +1176,6 @@ int sqlite3SafetyCheckOk(sqlite3 *db){
 }
 int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
   u32 magic;
-  if( db==0 ){
-    logBadConnection("NULL");
-    return 0;
-  }
   magic = db->magic;
   if( magic!=SQLITE_MAGIC_SICK &&
       magic!=SQLITE_MAGIC_OPEN &&
