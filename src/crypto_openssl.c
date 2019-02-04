@@ -151,14 +151,27 @@ static int sqlcipher_openssl_random (void *ctx, void *buffer, int length) {
 }
 
 static int sqlcipher_openssl_hmac(void *ctx, unsigned char *hmac_key, int key_sz, unsigned char *in, int in_sz, unsigned char *in2, int in2_sz, unsigned char *out) {
-  HMAC_CTX hctx;
   unsigned int outlen;
-  HMAC_CTX_init(&hctx);
-  HMAC_Init_ex(&hctx, hmac_key, key_sz, EVP_sha1(), NULL);
-  HMAC_Update(&hctx, in, in_sz);
-  HMAC_Update(&hctx, in2, in2_sz);
-  HMAC_Final(&hctx, out, &outlen);
-  HMAC_CTX_cleanup(&hctx);
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+  HMAC_CTX hctx;
+  HMAC_CTX *hctx_p = &hctx;
+  HMAC_CTX_init(hctx_p);
+#else
+  HMAC_CTX *hctx_p = HMAC_CTX_new();
+  if (!hctx_p)
+    return SQLITE_ERROR;
+#endif
+
+  HMAC_Init_ex(hctx_p, hmac_key, key_sz, EVP_sha1(), NULL);
+  HMAC_Update(hctx_p, in, in_sz);
+  HMAC_Update(hctx_p, in2, in2_sz);
+  HMAC_Final(hctx_p, out, &outlen);
+
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+  HMAC_CTX_cleanup(hctx_p);
+#else
+  HMAC_CTX_free(hctx_p);
+#endif
   return SQLITE_OK; 
 }
 
@@ -168,18 +181,35 @@ static int sqlcipher_openssl_kdf(void *ctx, const unsigned char *pass, int pass_
 }
 
 static int sqlcipher_openssl_cipher(void *ctx, int mode, unsigned char *key, int key_sz, unsigned char *iv, unsigned char *in, int in_sz, unsigned char *out) {
-  EVP_CIPHER_CTX ectx;
   int tmp_csz, csz;
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+  EVP_CIPHER_CTX ectx;
+  EVP_CIPHER_CTX *ectx_p = &ectx;
+#else
+  EVP_CIPHER_CTX *ectx_p = EVP_CIPHER_CTX_new();
+  if (!ectx_p)
+    return SQLITE_ERROR;
+#endif
  
-  EVP_CipherInit(&ectx, ((openssl_ctx *)ctx)->evp_cipher, NULL, NULL, mode);
-  EVP_CIPHER_CTX_set_padding(&ectx, 0); // no padding
-  EVP_CipherInit(&ectx, NULL, key, iv, mode);
-  EVP_CipherUpdate(&ectx, out, &tmp_csz, in, in_sz);
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+  EVP_CipherInit(ectx_p, ((openssl_ctx *)ctx)->evp_cipher, NULL, NULL, mode);
+  EVP_CIPHER_CTX_set_padding(ectx_p, 0); // no padding
+  EVP_CipherInit(ectx_p, NULL, key, iv, mode);
+#else
+  EVP_CipherInit_ex(ectx_p, ((openssl_ctx *)ctx)->evp_cipher, NULL, NULL, NULL, mode);
+  EVP_CIPHER_CTX_set_padding(ectx_p, 0); // no padding
+  EVP_CipherInit_ex(ectx_p, NULL, NULL, key, iv, mode);
+#endif
+  EVP_CipherUpdate(ectx_p, out, &tmp_csz, in, in_sz);
   csz = tmp_csz;  
   out += tmp_csz;
-  EVP_CipherFinal(&ectx, out, &tmp_csz);
+  EVP_CipherFinal(ectx_p, out, &tmp_csz);
   csz += tmp_csz;
-  EVP_CIPHER_CTX_cleanup(&ectx);
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+  EVP_CIPHER_CTX_cleanup(ectx_p);
+#else
+  EVP_CIPHER_CTX_free(ectx_p);
+#endif
   assert(in_sz == csz);
   return SQLITE_OK; 
 }
