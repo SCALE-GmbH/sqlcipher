@@ -532,7 +532,7 @@ EXTHDR += \
 
 # executables needed for testing
 #
-TESTPROGS = testfixture$(TEXE) sqlcipher$(TEXE) sqlite3$(TEXE) sqldiff$(TEXE)
+TESTPROGS = testfixture$(TEXE) sqlite3$(TEXE) sqldiff$(TEXE)
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -557,11 +557,6 @@ libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 		-avoid-version
 
 sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
-	$(LTLINK) $(READLINE_FLAGS) \
-		-o $@ $(TOP)/src/shell.c libsqlite3.la \
-		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
-
-sqlcipher$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) \
 		-o $@ $(TOP)/src/shell.c libsqlite3.la \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
@@ -878,10 +873,6 @@ tclsqlite-shell.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 tclsqlite-stubs.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(LTCOMPILE) -DUSE_TCL_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c
 
-tclsqlcipher$(TEXE):	tclsqlite-shell.lo libsqlite3.la
-	$(LTLINK) -o $@ tclsqlite-shell.lo \
-		 libsqlite3.la $(LIBTCL)
-
 tclsqlite3$(TEXE):	tclsqlite-shell.lo libsqlite3.la
 	$(LTLINK) -o $@ tclsqlite-shell.lo \
 		 libsqlite3.la $(LIBTCL)
@@ -1132,7 +1123,6 @@ tcl_install:	lib_install libtclsqlite3.la pkgIndex.tcl
 	$(INSTALL) -m 0644 pkgIndex.tcl $(DESTDIR)$(TCLLIBDIR)
 
 clean:	
-	rm -f *.lo *.la *.o sqlcipher$(TEXE) libsqlcipher.la
 	rm -f *.lo *.la *.o sqlite3$(TEXE) libsqlite3.la
 	rm -f sqlite3.h opcodes.*
 	rm -rf .libs .deps
@@ -1141,7 +1131,6 @@ clean:
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -rf quota2a quota2b quota2c
 	rm -rf tsrc .target_source
-	rm -f tclsqlcipher$(TEXE)
 	rm -f tclsqlite3$(TEXE)
 	rm -f testfixture$(TEXE) test.db
 	rm -f LogEst$(TEXE) fts3view$(TEXE) rollback-test$(TEXE) showdb$(TEXE)
@@ -1156,7 +1145,7 @@ clean:
 	rm -f mptester mptester.exe
 
 distclean:	clean
-	rm -f config.log config.status libtool Makefile sqlcipher.pc sqlite3.pc
+	rm -f config.log config.status libtool Makefile sqlite3.pc
 
 #
 # Windows section

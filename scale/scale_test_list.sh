@@ -29,7 +29,7 @@ ulimit -c unlimited >/dev/null
 ulimit -a >/dev/null
 ulimit -n 1024 >/dev/null
 
-if [ "$REBUILD_ALWAYS" == "1" ] || [ ! -f ./sqlcipher ] || [ ! -f ./testfixture ]; then
+if [ "$REBUILD_ALWAYS" == "1" ] || [ ! -f ./sqlite3 ] || [ ! -f ./testfixture ]; then
     touch $OUTPUT_LOG
     echo -e "\nset environment"
     source ./scale/scale_include.sh | tee -a $OUTPUT_LOG
