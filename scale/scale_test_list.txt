@@ -159,13 +159,10 @@ ext/rtree/rtree4.test
 ext/rtree/rtree5.test
 ext/rtree/rtree6.test
 ext/rtree/rtree7.test
-ext/rtree/rtree8.test
 ext/rtree/rtree9.test
 ext/rtree/rtreeA.test
 ext/rtree/rtreeB.test
-ext/rtree/rtreeC.test
 ext/rtree/rtreeD.test
-ext/rtree/rtreeE.test
 ext/rtree/rtreeF.test
 ext/rtree/tkt3363.test
 fallocate.test
