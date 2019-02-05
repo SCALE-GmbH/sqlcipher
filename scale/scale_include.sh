@@ -43,8 +43,10 @@ elif [ "$TMP_CONFIG_MODE" == "ASAN" ] ; then
 	export CXXFLAGS="$ASAN_FLAGS $CXXFLAGS"
 	#export DEBUG_FLAGS="--enable-debug"
 	export LDFLAGS="-fsanitize=address -static-libasan $LDFLAGS"
-
 	unset ASAN_FLAGS
+
+	# skip sqlite/sqlcipher misuse tests (search for with clang_sanitize_address)
+	export OMIT_MISUSE=1
 
 else  # default: RELEASE
 	export CFLAGS="-O2 $CFLAGS"
