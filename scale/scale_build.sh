@@ -7,4 +7,6 @@ set -eo pipefail
 echo -e '\nbuild'
 ./configure --verbose --enable-tempstore=yes --with-crypto-lib=$CRYPTO_LIB $DEBUG_FLAGS CFLAGS="$CFLAGS"
 make clean
+
 make -j3 all
+make -j3 testfixture sqldiff

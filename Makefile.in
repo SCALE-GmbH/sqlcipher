@@ -530,14 +530,10 @@ EXTHDR += \
 EXTHDR += \
   $(TOP)/ext/rtree/sqlite3rtree.h
 
-# executables needed for testing
-#
-TESTPROGS = testfixture$(TEXE) sqlite3$(TEXE) sqldiff$(TEXE)
-
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	sqlite3.h libsqlite3.la sqlite3$(TEXE) $(HAVE_TCL:1=libtclsqlite3.la) $(TESTPROGS)
+all:	sqlite3.h libsqlite3.la sqlite3$(TEXE) $(HAVE_TCL:1=libtclsqlite3.la)
 
 Makefile: $(TOP)/Makefile.in
 	./config.status
