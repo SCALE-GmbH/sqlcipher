@@ -26,4 +26,4 @@ script:
   # the test suite assumes that it can't open 2000 files. If passes on my notebook with a file
   # limit of 1024 open files so use the same value here.
   - (ulimit -n 1024 && tclsh tool/travis_wrapper.tcl
-    ./testfixture "test/scale_permutations.test" --disable-oom-faults "scale-test-suite" $TEST_OPTIONS || exit $?)
+    ./testfixture ${TESTSUITE:-test/veryquick.test} --disable-oom-faults $TEST_OPTIONS || exit $?)
