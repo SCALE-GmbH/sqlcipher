@@ -19,6 +19,12 @@ MAX_LINE=-1
 
 REBUILD_ALWAYS=0
 
+## needed for testing with ASAN
+## disable memory leak detection
+#export ASAN_OPTIONS=detect_leaks=0
+## skip sqlite/sqlcipher misuse tests (search for clang_sanitize_address)
+#export OMIT_MISUSE=1
+
 # --------------------------------------------------------------
 
 # go to base dir of sqlcipher, not to this subdir!

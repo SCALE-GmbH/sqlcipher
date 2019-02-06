@@ -46,12 +46,14 @@ if [ "$BUILD_CONFIG" == "$BUILD_DEBUG" ] ; then
     export DEBUG_FLAGS="--enable-debug"
 
 elif [ "$BUILD_CONFIG" == "$BUILD_ASAN" ] ; then
-    export ASAN_OPTIONS=detect_leaks=0
-
     TMP_ASAN_FLAGS="-O2 -fsanitize=address -fno-omit-frame-pointer"
     export CFLAGS="-ggdb $TMP_ASAN_FLAGS $CFLAGS_PRECONF"
     export LDFLAGS="-fsanitize=address -static-libasan $LDFLAGS_COMMON"
     unset TMP_ASAN_FLAGS
+
+    # has to be set during testing!
+    #export ASAN_OPTIONS=detect_leaks=0
+    #export OMIT_MISUSE=1  # skip sqlite/sqlcipher misuse tests (search for with clang_sanitize_address)
 
 elif [ "$BUILD_CONFIG" == "$BUILD_RELEASE" ] ; then    
     export CFLAGS="-O2 $CFLAGS_PRECONF"
@@ -62,7 +64,6 @@ else
     exit 1  
 fi
 
-echo "ASAN_OPTIONS=\"$ASAN_OPTIONS\""
 echo "CFLAGS=\"$CFLAGS\""
 echo "CRYPTO_LIB=\"$CRYPTO_LIB\""
 echo "CXXFLAGS=\"$CXXFLAGS\""
