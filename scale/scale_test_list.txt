@@ -425,7 +425,6 @@ rollback.test
 rollback2.test
 rowhash.test
 rowid.test
-savepoint.test
 savepoint2.test
 savepoint5.test
 savepoint7.test
