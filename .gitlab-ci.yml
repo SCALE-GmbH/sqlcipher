@@ -1,0 +1,15 @@
+image: debian:stretch
+
+test:
+  before_script:
+    - apt-get update
+    - apt-get install --yes build-essential libssl1.0-dev libcrypto++-dev tcl tcl-dev
+  script:
+    - ./scale/scale_conf_build.sh
+    - ./scale/scale_test_list.sh
+  artifacts:
+      expire_in: 7 day
+      when: always
+      name: sqlcipher_tests_results
+      paths:
+        - ./scale/test_results*
