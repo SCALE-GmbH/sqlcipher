@@ -6,7 +6,6 @@ alter.test
 alter2.test
 alter3.test
 alter4.test
-altermalloc.test
 amatch1.test
 analyze.test
 analyze3.test
@@ -32,7 +31,6 @@ attach.test
 attach2.test
 attach3.test
 attach4.test
-attachmalloc.test
 auth.test
 auth2.test
 auth3.test
@@ -381,7 +379,6 @@ lock6.test
 lock7.test
 lookaside.test
 main.test
-malloc.test
 malloc3.test
 malloc4.test
 malloc5.test
@@ -390,10 +387,6 @@ malloc7.test
 malloc9.test
 mallocB.test
 mallocC.test
-mallocD.test
-mallocG.test
-mallocH.test
-mallocI.test
 mallocL.test
 manydb.test
 mem5.test
