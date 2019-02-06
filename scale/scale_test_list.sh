@@ -92,7 +92,7 @@ while read LINE_IN; do
 
     rm "$OUTPUT_TMP" >/dev/null 2>&1
 
-    echo "$TEST_RESULT (${DURATION}s)" | tee -a $OUTPUT_LOG
+    echo "$TEST_RESULT (#${RC}, ${DURATION}s)" | tee -a $OUTPUT_LOG
     echo "$LINE;$TEST_RESULT" >> $RESULT_FILE
 
 done <$TEST_LIST_FILE
