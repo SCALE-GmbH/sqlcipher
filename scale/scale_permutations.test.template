@@ -1,0 +1,150 @@
+# 2008 June 21
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+db close
+
+#-------------------------------------------------------------------------
+# test_suite NAME OPTIONS
+#
+# where available options are:
+#
+#       -description TITLE                  (default "")
+#       -initialize  SCRIPT                 (default "")
+#       -shutdown    SCRIPT                 (default "")
+#       -presql      SQL                    (default "")
+#       -files       LIST-OF-FILES          (default $::ALLTESTS)
+#       -prefix      NAME                   (default "$::NAME.")
+#       -dbconfig    SCRIPT                 (default "")
+#
+proc test_suite {name args} {
+
+  set default(-shutdown)    ""
+  set default(-initialize)  ""
+  set default(-presql)      ""
+  set default(-description) "no description supplied (fixme)"
+  set default(-files)       ""
+  set default(-prefix)      "${name}."
+  set default(-dbconfig)    ""
+
+  array set options [array get default]
+  if {[llength $args]%2} {
+    error "uneven number of options/switches passed to test_suite"
+  }
+  foreach {k v} $args {
+    set o [array names options ${k}*]
+    if {[llength $o]>1}  { error "ambiguous option: $k" }
+    if {[llength $o]==0} { error "unknown option: $k" }
+    set options([lindex $o 0]) $v
+  }
+
+  set     ::testspec($name) [array get options]
+  lappend ::testsuitelist $name
+}
+
+
+#############################################################################
+# Start of tests
+#
+
+test_suite "scale-test-suite" -prefix "" -description {
+  scale-test-suite - manual managed list running tests
+} -files {
+#SED_RELACE_WITH_TEST_FILE#
+}
+
+
+
+# End of tests
+#############################################################################
+
+# run_tests NAME OPTIONS
+#
+# where available options are:
+#
+#       -description TITLE
+#       -initialize  SCRIPT
+#       -shutdown    SCRIPT
+#       -presql      SQL
+#       -files       LIST-OF-FILES
+#       -prefix      NAME
+#
+proc run_tests {name args} {
+  array set options $args
+
+  set ::G(perm:name)         $name
+  set ::G(perm:prefix)       $options(-prefix)
+  set ::G(perm:presql)       $options(-presql)
+  set ::G(isquick)           1
+  set ::G(perm:dbconfig)     $options(-dbconfig)
+
+  uplevel $options(-initialize)
+
+  foreach file [lsort $options(-files)] {
+    if {[file tail $file] == $file} { set file [file join $::testdir $file] }
+    slave_test_file $file
+  }
+
+  uplevel $options(-shutdown)
+
+  unset ::G(perm:name)
+  unset ::G(perm:prefix)
+  unset ::G(perm:presql)
+  unset ::G(perm:dbconfig)
+}
+
+proc run_test_suite {name} {
+  if {[info exists ::testspec($name)]==0} {
+    error "No such test suite: $name"
+  }
+  uplevel run_tests $name $::testspec($name)
+}
+
+proc help {} {
+  puts "Usage: $::argv0 TESTSUITE ?TESTFILE?"
+  puts ""
+  puts "Available test-suites are:"
+  foreach k $::testsuitelist {
+    if {[info exists ::testspec($k)]==0} {
+      puts "         ----------------------------------------"
+      puts ""
+    } else {
+      array set o $::testspec($k)
+      puts "Test suite: \"$k\""
+      set d [string trim $o(-description)]
+      set d [regsub {\n *} $d "\n  "]
+      puts "  $d"
+      puts ""
+    }
+  }
+  exit -1
+}
+
+if {[info script] == $argv0} {
+  proc main {argv} {
+    if {[llength $argv]==0} {
+      help
+    } else {
+      set suite [lindex $argv 0]
+      if {[info exists ::testspec($suite)]==0} help
+      set extra ""
+      if {[llength $argv]>1} { set extra [list -files [lrange $argv 1 end]] }
+      eval run_tests $suite $::testspec($suite) $extra
+    }
+  }
+  main $argv
+  finish_test
+}
+
+run_test_suite scale-test-list
+
